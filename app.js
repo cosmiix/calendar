@@ -30,6 +30,7 @@ let currentMonth = new Date();
 let isEditMode = false;
 let userRole = null; // 'tanya' или 'dima'
 let selectedDay = null;
+let selectedNote = null;
 let scheduleData = {};
 let notesData = {};
 const monthNames = [
@@ -109,13 +110,11 @@ function setupEventListeners() {
         updateStats();
     });
 
-    // Кнопка редактирования - ИСПРАВЛЕННЫЙ ОБРАБОТЧИК
+    // Кнопка редактирования
     document.getElementById('edit-toggle').addEventListener('click', function() {
         if (isEditMode) {
-            // Если уже в режиме редактирования - выходим из него
             exitEditMode();
         } else {
-            // Если не в режиме редактирования - показываем авторизацию
             showAuthModal();
         }
     });
@@ -128,18 +127,40 @@ function setupEventListeners() {
 
     // Форма добавления заметки
     document.getElementById('add-note-form').addEventListener('submit', handleAddNote);
+
+    // Форма ответа на заметку
+    document.getElementById('reply-note-form').addEventListener('submit', handleReplyNote);
+
+    // Кнопка добавления заметки в боковой панели
+    const addDayNoteBtn = document.getElementById('add-day-note');
+    if (addDayNoteBtn) {
+        addDayNoteBtn.addEventListener('click', function() {
+            if (selectedDay) {
+                showAddNoteForm();
+            } else {
+                alert('Сначала выберите день');
+            }
+        });
+    }
 }
 
 // Рендер календаря
 function renderCalendar() {
     const calendar = document.getElementById('monthCalendar');
+    if (!calendar) {
+        console.error('Элемент monthCalendar не найден');
+        return;
+    }
     calendar.innerHTML = '';
 
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
     
     // Обновляем заголовок
-    document.getElementById('month-range').textContent = `${monthNames[month]} ${year}`;
+    const monthRange = document.getElementById('month-range');
+    if (monthRange) {
+        monthRange.textContent = `${monthNames[month]} ${year}`;
+    }
 
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
@@ -215,28 +236,170 @@ function createDayElement(date, isOtherMonth) {
         dayElement.addEventListener('click', () => handleDayClick(date, dayKey, isWorkDay));
     }
 
-    document.getElementById('monthCalendar').appendChild(dayElement);
+    const monthCalendar = document.getElementById('monthCalendar');
+    if (monthCalendar) {
+        monthCalendar.appendChild(dayElement);
+    }
 }
 
 // Обработчик клика по дню
 function handleDayClick(date, dayKey, isWorkDay) {
     if (isEditMode) {
-        // В режиме редактирования
         selectedDay = { date, dayKey, isWorkDay };
         
         if (userRole === 'tanya') {
-            // Таня - просто отмечает рабочий день без выбора времени
             toggleWorkDay();
         } else if (userRole === 'dima') {
-            // Дима - выбирает время
             showTimeModal();
         }
     } else {
-        // В режиме просмотра - показ заметок
         selectedDay = { date, dayKey, isWorkDay };
-        showNotesModal();
+        showDayNotes(date, dayKey);
     }
 }
+
+// Функция для отображения заметок выбранного дня
+function showDayNotes(date, dayKey) {
+    const selectedDayInfo = document.getElementById('selected-day-info');
+    const dayNotesList = document.getElementById('day-notes-list');
+    
+    if (!selectedDayInfo || !dayNotesList) {
+        console.warn('Элементы боковой панели не найдены');
+        return;
+    }
+    
+    // Обновляем информацию о выбранном дне
+    const dateStr = date.toLocaleDateString('ru-RU', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+    selectedDayInfo.textContent = dateStr;
+    
+    // Получаем заметки для этого дня
+    const dayNotes = notesData[dayKey] || [];
+    
+    if (dayNotes.length > 0) {
+        // Показываем заметки с кнопками действий
+        dayNotesList.innerHTML = dayNotes.map((note, index) => `
+            <div class="day-note-item">
+                <div class="day-note-text">${note.text}</div>
+                <div class="day-note-time">${new Date(note.timestamp).toLocaleString('ru-RU', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    day: '2-digit',
+                    month: '2-digit'
+                })}</div>
+                ${note.reply ? `
+                    <div class="note-reply">
+                        <div class="reply-text"><strong>Ответ:</strong> ${note.reply.text}</div>
+                        <div class="reply-time">${new Date(note.reply.timestamp).toLocaleString('ru-RU', { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            day: '2-digit',
+                            month: '2-digit'
+                        })}</div>
+                    </div>
+                ` : ''}
+                <div class="day-note-actions">
+                    <button class="btn btn-reply" onclick="showReplyModal('${dayKey}', ${index})">
+                        💬 Ответить
+                    </button>
+                    <button class="btn btn-danger" onclick="deleteNote('${dayKey}', ${index})">
+                        🗑️ Удалить
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        dayNotesList.innerHTML = '<div class="no-notes">Заметок нет</div>';
+    }
+}
+
+// Функция удаления заметки
+async function deleteNote(dayKey, noteIndex) {
+    if (!confirm('Вы уверены, что хотите удалить эту заметку?')) {
+        return;
+    }
+    
+    if (notesData[dayKey] && notesData[dayKey][noteIndex]) {
+        // Удаляем из локальных данных
+        notesData[dayKey].splice(noteIndex, 1);
+        
+        // Если массив пустой, удаляем ключ
+        if (notesData[dayKey].length === 0) {
+            delete notesData[dayKey];
+        }
+        
+        // Обновляем отображение
+        showDayNotes(selectedDay.date, dayKey);
+        renderCalendar();
+        
+        // TODO: Удаление из Firebase (нужно хранить ID заметок)
+        console.log('Заметка удалена локально');
+    }
+}
+
+// Функция показа модального окна ответа
+function showReplyModal(dayKey, noteIndex) {
+    const note = notesData[dayKey][noteIndex];
+    if (!note) return;
+    
+    selectedNote = { dayKey, noteIndex, note };
+    
+    const modal = document.getElementById('reply-note-modal');
+    const originalNote = document.getElementById('original-note-content');
+    
+    if (modal && originalNote) {
+        originalNote.innerHTML = `
+            <strong>Оригинальная заметка:</strong><br>
+            ${note.text}<br>
+            <small>${new Date(note.timestamp).toLocaleString('ru-RU')}</small>
+        `;
+        
+        document.getElementById('reply-text').value = '';
+        modal.style.display = 'flex';
+    }
+}
+
+// Функция обработки ответа на заметку
+async function handleReplyNote(e) {
+    e.preventDefault();
+    const replyText = document.getElementById('reply-text').value.trim();
+    
+    if (!replyText || !selectedNote) return;
+    
+    const { dayKey, noteIndex, note } = selectedNote;
+    
+    // Добавляем ответ к заметке
+    note.reply = {
+        text: replyText,
+        timestamp: new Date().toISOString()
+    };
+    
+    // Обновляем локальные данные
+    notesData[dayKey][noteIndex] = note;
+    
+    // Обновляем отображение
+    showDayNotes(selectedDay.date, dayKey);
+    closeReplyModal();
+    
+    // TODO: Сохранение в Firebase
+    console.log('Ответ добавлен локально');
+}
+
+// Закрытие модального окна ответа
+function closeReplyModal() {
+    const modal = document.getElementById('reply-note-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    selectedNote = null;
+}
+
+// Остальные функции остаются без изменений...
+// [Здесь должны быть все остальные функции из предыдущего кода: toggleWorkDay, showTimeModal, closeTimeModal, showAddNoteForm, closeAddNoteModal, showAuthModal, closeAuthModal, handleAuth, handleAddNote, saveWorkTime, enterEditMode, exitEditMode, updateStats]
 
 // Новая функция для переключения рабочего дня (для Тани)
 async function toggleWorkDay() {
@@ -279,6 +442,11 @@ function showTimeModal() {
     const timeStartSelect = document.getElementById('work-time-start');
     const timeEndSelect = document.getElementById('work-time-end');
     
+    if (!modal || !title || !timeStartSelect || !timeEndSelect) {
+        console.error('Элементы модального окна времени не найдены');
+        return;
+    }
+    
     const dateStr = selectedDay.date.toLocaleDateString('ru-RU');
     title.textContent = `Время работы на ${dateStr}`;
     
@@ -312,41 +480,20 @@ function showTimeModal() {
 }
 
 function closeTimeModal() {
-    document.getElementById('time-modal').style.display = 'none';
-}
-
-function showNotesModal() {
-    const modal = document.getElementById('notes-modal');
-    const title = document.getElementById('notes-modal-title');
-    const notesList = document.getElementById('notes-list');
-    
-    const dateStr = selectedDay.date.toLocaleDateString('ru-RU');
-    title.textContent = `Заметки за ${dateStr}`;
-    
-    // Показываем заметки
-    const dayNotes = notesData[selectedDay.dayKey] || [];
-    if (dayNotes.length > 0) {
-        notesList.innerHTML = dayNotes.map(note => `
-            <div class="note-item">
-                <div class="note-text">${note.text}</div>
-                <div class="note-time">${new Date(note.timestamp).toLocaleString('ru-RU')}</div>
-            </div>
-        `).join('');
-    } else {
-        notesList.innerHTML = '<div class="no-notes">Нет заметок для этого дня</div>';
+    const modal = document.getElementById('time-modal');
+    if (modal) {
+        modal.style.display = 'none';
     }
-    
-    modal.style.display = 'flex';
-}
-
-function closeNotesModal() {
-    document.getElementById('notes-modal').style.display = 'none';
 }
 
 function showAddNoteForm() {
-    closeNotesModal();
     const modal = document.getElementById('add-note-modal');
     const title = document.getElementById('add-note-title');
+    
+    if (!modal || !title) {
+        console.error('Элементы модального окна добавления заметки не найдены');
+        return;
+    }
     
     const dateStr = selectedDay.date.toLocaleDateString('ru-RU');
     title.textContent = `Добавить заметку на ${dateStr}`;
@@ -356,17 +503,26 @@ function showAddNoteForm() {
 }
 
 function closeAddNoteModal() {
-    document.getElementById('add-note-modal').style.display = 'none';
+    const modal = document.getElementById('add-note-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
 
 function showAuthModal() {
-    document.getElementById('auth-modal').style.display = 'flex';
-    document.getElementById('password-input').value = '';
-    document.getElementById('user-type').value = 'tanya';
+    const modal = document.getElementById('auth-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.getElementById('password-input').value = '';
+        document.getElementById('user-type').value = 'tanya';
+    }
 }
 
 function closeAuthModal() {
-    document.getElementById('auth-modal').style.display = 'none';
+    const modal = document.getElementById('auth-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
 
 // Обработчики форм
@@ -421,8 +577,12 @@ async function handleAddNote(e) {
     }
     
     closeAddNoteModal();
-    showNotesModal();
-    renderCalendar(); // Обновляем индикатор заметок
+    
+    // Обновляем отображение заметок в боковой панели
+    showDayNotes(selectedDay.date, selectedDay.dayKey);
+    
+    // Обновляем индикатор заметок в календаре
+    renderCalendar();
 }
 
 async function saveWorkTime() {
@@ -486,7 +646,7 @@ function exitEditMode() {
     userRole = null;
     document.body.classList.remove('edit-mode', 'role-tanya', 'role-dima');
     document.getElementById('edit-notice').style.display = 'none';
-    document.getElementById('edit-toggle').textContent = '✏️ Редактировать';
+    document.getElementById('edit-toggle').textContent = 'Edit';
     document.getElementById('edit-toggle').classList.remove('btn-secondary');
     document.getElementById('edit-toggle').classList.add('btn-primary');
 }
@@ -517,12 +677,18 @@ function updateStats() {
     }
     
     // Обновляем статистику
-    document.getElementById('total-work-days').textContent = workDays;
+    const totalWorkDays = document.getElementById('total-work-days');
+    const nextWorkday = document.getElementById('next-workday');
     
-    if (nextWorkDay) {
-        document.getElementById('next-workday').textContent = 
-            nextWorkDay.toLocaleDateString('ru-RU');
-    } else {
-        document.getElementById('next-workday').textContent = 'Нет данных';
+    if (totalWorkDays) {
+        totalWorkDays.textContent = workDays;
+    }
+    
+    if (nextWorkday) {
+        if (nextWorkDay) {
+            nextWorkday.textContent = nextWorkDay.toLocaleDateString('ru-RU');
+        } else {
+            nextWorkday.textContent = 'Нет данных';
+        }
     }
 }
