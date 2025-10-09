@@ -636,11 +636,11 @@ function enterEditMode() {
     if (userRole === 'tanya') {
         notice.innerHTML = `
             <p>Нажимайте на дни для отметки рабочих дней</p>
-            <button id="save-changes" class="btn btn-secondary" style="margin-top: 10px;">💾Сохранить</button>`;
+            <button id="save-changes" class="btn btn-secondary" style="margin-top: 10px;">Сохранить</button>`;
     } else if (userRole === 'dima') {
         notice.innerHTML = `
             <p>Нажимайте на дни для выбора времени</p>
-            <button id="save-changes" class="btn btn-secondary" style="margin-top: 10px;">💾Сохранить</button>`;
+            <button id="save-changes" class="btn btn-secondary" style="margin-top: 10px;">Сохранить</button>`;
     }
     
     document.getElementById('edit-notice').style.display = 'block';
@@ -721,5 +721,6 @@ window.addEventListener('click', function(event) {
         }
     });
 });
+
 
 
