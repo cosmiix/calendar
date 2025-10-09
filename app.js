@@ -1,17 +1,45 @@
 // app.js
 // 🔧 КОНФИГУРАЦИЯ FIREBASE
-const firebaseConfig = {
-  apiKey: "AIzaSyCB_bwtspz0GuQeialypinwih1VQ1E30wo",
-  authDomain: "my-schedule-b323f.firebaseapp.com",
-  projectId: "my-schedule-b323f",
-  storageBucket: "my-schedule-b323f.firebasestorage.app",
-  messagingSenderId: "2949606491",
-  appId: "1:2949606491:web:2a0f37da954c0d1267237e"
-};
+let firebaseConfig = {};
+let ADMIN_PASSWORD_HASH = "";
+let MANAGER_PASSWORD_HASH = "";
 
-// 🔐 ПАРОЛИ ДЛЯ РЕДАКТИРОВАНИЯ (sha256 хеш)
-const TANYA_PASSWORD_HASH = "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"; // Пароль:
-const DIMA_PASSWORD_HASH = "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"; // Пароль:
+// Загрузка конфигурации
+async function loadConfig() {
+    try {
+        // Пытаемся загрузить конфиг из внешнего файла
+        const response = await fetch('./config.js');
+        if (response.ok) {
+            // Динамически загружаем конфиг
+            const script = document.createElement('script');
+            script.src = './config.js';
+            document.head.appendChild(script);
+            
+            // Ждем загрузки конфига
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            if (window.firebaseConfig) {
+                firebaseConfig = window.firebaseConfig;
+                ADMIN_PASSWORD_HASH = window.ADMIN_PASSWORD_HASH;
+                MANAGER_PASSWORD_HASH = window.MANAGER_PASSWORD_HASH;
+                console.log('✅ Конфигурация загружена из config.js');
+            }
+        }
+    } catch (error) {
+        console.warn('❌ Config.js не найден, используем значения по умолчанию');
+        // Значения по умолчанию для GitHub Pages
+        firebaseConfig = {
+            apiKey: "AIzaSyCB_bwtspz0GuQeialypinwih1VQ1E30wo",
+            authDomain: "my-schedule-b323f.firebaseapp.com",
+            projectId: "my-schedule-b323f",
+            storageBucket: "my-schedule-b323f.firebasestorage.app",
+            messagingSenderId: "2949606491",
+            appId: "1:2949606491:web:2a0f37da954c0d1267237e"
+        };
+        ADMIN_PASSWORD_HASH = "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92";
+        MANAGER_PASSWORD_HASH = "b2d78a0f6f3d76b28d5367d65bdd031f6704f25f2d3fe6c3d2d3b4a6f6c1a2c6";
+    }
+}
 
 // Инициализация Firebase
 let db = null;
@@ -52,7 +80,8 @@ const endTimeOptions = {
 };
 
 // Инициализация приложения
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadConfig();
     initializeApp();
 });
 
@@ -382,11 +411,11 @@ async function handleAuth(e) {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     
-    if (userType === 'tanya' && hashHex === TANYA_PASSWORD_HASH) {
+    if (userType === 'tanya' && hashHex === ADMIN_PASSWORD_HASH) {
         userRole = 'tanya';
         enterEditMode();
         closeAuthModal();
-    } else if (userType === 'dima' && hashHex === DIMA_PASSWORD_HASH) {
+    } else if (userType === 'dima' && hashHex === MANAGER_PASSWORD_HASH) {
         userRole = 'dima';
         enterEditMode();
         closeAuthModal();
@@ -483,7 +512,7 @@ function enterEditMode() {
 
 function exitEditMode() {
     isEditMode = false;
-    userRole = null; // Очищаем роль пользователя
+    userRole = null;
     document.body.classList.remove('edit-mode', 'role-tanya', 'role-dima');
     document.getElementById('edit-notice').style.display = 'none';
     document.getElementById('edit-toggle').textContent = '✏️ Редактировать';
@@ -525,125 +554,4 @@ function updateStats() {
     } else {
         document.getElementById('next-workday').textContent = 'Нет данных';
     }
-// Добавляем в конец файла app.js перед последней закрывающей скобкой
-
-// Функции для работы с событиями и быстрыми заметками
-async function loadUpcomingEvents() {
-    const eventsList = document.getElementById('upcoming-events');
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    let upcomingEvents = [];
-    
-    // Ищем рабочие дни в текущем месяце
-    const year = currentMonth.getFullYear();
-    const month = currentMonth.getMonth();
-    const lastDay = new Date(year, month + 1, 0).getDate();
-    
-    for (let day = 1; day <= lastDay; day++) {
-        const currentDay = new Date(year, month, day);
-        if (currentDay < today) continue;
-        
-        const dayKey = currentDay.toISOString().split('T')[0];
-        const schedule = scheduleData[dayKey];
-        
-        if (schedule?.isWorkDay) {
-            upcomingEvents.push({
-                date: currentDay,
-                title: 'Рабочий день',
-                time: schedule.timeStart && schedule.timeEnd ? 
-                      `${schedule.timeStart}-${schedule.timeEnd}` : 'Полный день'
-            });
-            
-            // Ограничиваем количество отображаемых событий
-            if (upcomingEvents.length >= 5) break;
-        }
-    }
-    
-    if (upcomingEvents.length > 0) {
-        eventsList.innerHTML = upcomingEvents.map(event => `
-            <div class="event-item">
-                <div class="event-title">${event.title}</div>
-                <div class="event-date">
-                    <span>${event.date.toLocaleDateString('ru-RU')}</span>
-                    <span>${event.time}</span>
-                </div>
-            </div>
-        `).join('');
-    } else {
-        eventsList.innerHTML = '<div class="no-events">Нет предстоящих событий</div>';
-    }
-}
-
-// Функции для быстрых заметок
-async function loadQuickNotes() {
-    // Загружаем быстрые заметки из localStorage
-    const quickNotes = JSON.parse(localStorage.getItem('quickNotes') || '[]');
-    const notesList = document.getElementById('quick-notes-list');
-    
-    if (quickNotes.length > 0) {
-        notesList.innerHTML = quickNotes.map((note, index) => `
-            <div class="quick-note-item">
-                ${note.text}
-                <button onclick="deleteQuickNote(${index})" class="btn btn-outline btn-compact" style="margin-top: 5px; padding: 2px 6px; font-size: 0.8em;">✕</button>
-            </div>
-        `).join('');
-    } else {
-        notesList.innerHTML = '';
-    }
-}
-
-function addQuickNote() {
-    const noteText = document.getElementById('quick-note-text').value.trim();
-    if (!noteText) return;
-    
-    const quickNotes = JSON.parse(localStorage.getItem('quickNotes') || '[]');
-    quickNotes.push({
-        text: noteText,
-        timestamp: new Date().toISOString()
-    });
-    
-    localStorage.setItem('quickNotes', JSON.stringify(quickNotes));
-    document.getElementById('quick-note-text').value = '';
-    loadQuickNotes();
-}
-
-function deleteQuickNote(index) {
-    const quickNotes = JSON.parse(localStorage.getItem('quickNotes') || '[]');
-    quickNotes.splice(index, 1);
-    localStorage.setItem('quickNotes', JSON.stringify(quickNotes));
-    loadQuickNotes();
-}
-
-// Обновляем функцию initializeApp
-async function initializeApp() {
-    await loadData();
-    setupEventListeners();
-    renderCalendar();
-    updateStats();
-    loadUpcomingEvents();
-    loadQuickNotes();
-}
-
-// Обновляем функцию setupEventListeners
-function setupEventListeners() {
-    // ... существующие обработчики ...
-    
-    // Кнопка добавления быстрой заметки
-    document.getElementById('add-quick-note').addEventListener('click', addQuickNote);
-    
-    // Enter для быстрых заметок
-    document.getElementById('quick-note-text').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            addQuickNote();
-        }
-    });
-}
-
-// Обновляем функцию renderCalendar чтобы обновлять события
-function renderCalendar() {
-    // ... существующий код ...
-    loadUpcomingEvents(); // Обновляем события при смене месяца
-}
 }
