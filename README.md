@@ -1,2 +1,0 @@
-# calendar
-My work calendar
