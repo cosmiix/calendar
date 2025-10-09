@@ -1,45 +1,17 @@
 // app.js
 // 🔧 КОНФИГУРАЦИЯ FIREBASE
-let firebaseConfig = {};
-let ADMIN_PASSWORD_HASH = "";
-let MANAGER_PASSWORD_HASH = "";
+const firebaseConfig = {
+  apiKey: "AIzaSyCB_bwtspz0GuQeialypinwih1VQ1E30wo",
+  authDomain: "my-schedule-b323f.firebaseapp.com",
+  projectId: "my-schedule-b323f",
+  storageBucket: "my-schedule-b323f.firebasestorage.app",
+  messagingSenderId: "2949606491",
+  appId: "1:2949606491:web:2a0f37da954c0d1267237e"
+};
 
-// Загрузка конфигурации
-async function loadConfig() {
-    try {
-        // Пытаемся загрузить конфиг из внешнего файла
-        const response = await fetch('./config.js');
-        if (response.ok) {
-            // Динамически загружаем конфиг
-            const script = document.createElement('script');
-            script.src = './config.js';
-            document.head.appendChild(script);
-            
-            // Ждем загрузки конфига
-            await new Promise(resolve => setTimeout(resolve, 100));
-            
-            if (window.firebaseConfig) {
-                firebaseConfig = window.firebaseConfig;
-                ADMIN_PASSWORD_HASH = window.ADMIN_PASSWORD_HASH;
-                MANAGER_PASSWORD_HASH = window.MANAGER_PASSWORD_HASH;
-                console.log('✅ Конфигурация загружена из config.js');
-            }
-        }
-    } catch (error) {
-        console.warn('❌ Config.js не найден, используем значения по умолчанию');
-        // Значения по умолчанию для GitHub Pages
-        firebaseConfig = {
-            apiKey: "AIzaSyCB_bwtspz0GuQeialypinwih1VQ1E30wo",
-            authDomain: "my-schedule-b323f.firebaseapp.com",
-            projectId: "my-schedule-b323f",
-            storageBucket: "my-schedule-b323f.firebasestorage.app",
-            messagingSenderId: "2949606491",
-            appId: "1:2949606491:web:2a0f37da954c0d1267237e"
-        };
-        ADMIN_PASSWORD_HASH = "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92";
-        MANAGER_PASSWORD_HASH = "b2d78a0f6f3d76b28d5367d65bdd031f6704f25f2d3fe6c3d2d3b4a6f6c1a2c6";
-    }
-}
+// 🔐 ПАРОЛИ ДЛЯ РЕДАКТИРОВАНИЯ (sha256 хеш)
+const ADMIN_PASSWORD_HASH = "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"; // Пароль: 123456
+const MANAGER_PASSWORD_HASH = "b2d78a0f6f3d76b28d5367d65bdd031f6704f25f2d3fe6c3d2d3b4a6f6c1a2c6"; // Пароль: manager123
 
 // Инициализация Firebase
 let db = null;
@@ -80,8 +52,7 @@ const endTimeOptions = {
 };
 
 // Инициализация приложения
-document.addEventListener('DOMContentLoaded', async function() {
-    await loadConfig();
+document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
 });
 
