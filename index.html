@@ -8,34 +8,28 @@
 </head>
 <body>
     <div class="container">
-        <!-- Шапка -->
-        <div class="header">
-            <h1>📅 Мой рабочий график</h1>
-            <p class="subtitle">Управление рабочим временем и заметками</p>
+        <!-- Панель управления -->
+        <div class="nav">
+            <div class="nav-group">
+                <button id="prev-month" class="btn btn-outline btn-compact">←</button>
+                <button id="current-month" class="btn btn-outline btn-compact">Сегодня</button>
+                <button id="next-month" class="btn btn-outline btn-compact">→</button>
+            </div>
+            <div id="month-range" class="nav-title">Октябрь 2024</div>
+            <button id="edit-toggle" class="btn btn-primary btn-edit">Edit</button>
+        </div>
+
+        <!-- Уведомление о режиме редактирования -->
+        <div id="edit-notice" class="edit-notice" style="display: none;">
+            <strong>🔧 Режим редактирования активен</strong>
+            <p>Нажимайте на дни для отметки рабочих дней и добавления заметок</p>
+            <button id="save-changes" class="btn btn-secondary" style="margin-top: 10px;">💾 Сохранить изменения</button>
         </div>
 
         <!-- Основной контент в две колонки -->
         <div class="main-content">
             <!-- Левая колонка - календарь -->
             <div class="calendar-column">
-                <!-- Панель управления -->
-                <div class="nav">
-                    <div class="nav-group">
-                        <button id="prev-month" class="btn btn-outline btn-compact">←</button>
-                        <button id="current-month" class="btn btn-outline btn-compact">Сегодня</button>
-                        <button id="next-month" class="btn btn-outline btn-compact">→</button>
-                    </div>
-                    <div id="month-range" class="nav-title">Октябрь 2024</div>
-                    <button id="edit-toggle" class="btn btn-primary btn-compact">✏️ Редактировать</button>
-                </div>
-
-                <!-- Уведомление о режиме редактирования -->
-                <div id="edit-notice" class="edit-notice" style="display: none;">
-                    <strong>🔧 Режим редактирования активен</strong>
-                    <p>Нажимайте на дни для отметки рабочих дней и добавления заметок</p>
-                    <button id="save-changes" class="btn btn-secondary" style="margin-top: 10px;">💾 Сохранить изменения</button>
-                </div>
-
                 <!-- Календарь -->
                 <div class="calendar-section">
                     <div class="weekdays-header">
@@ -51,17 +45,35 @@
                 </div>
             </div>
 
-            <!-- Правая колонка - статистика -->
-            <div class="stats-section">
-                <h2>📊 Статистика месяца</h2>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value" id="total-work-days">0</div>
-                        <div class="stat-label">Рабочих дней</div>
+            <!-- Правая колонка - статистика и заметки -->
+            <div class="sidebar-column">
+                <!-- Статистика -->
+                <div class="stats-section">
+                    <h2>📊 Статистика месяца</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="total-work-days">0</div>
+                            <div class="stat-label">Рабочих дней</div>
+                        </div>
+                        <div class="stat-card next-workday">
+                            <div class="stat-value" id="next-workday">-</div>
+                            <div class="stat-label">Ближайший рабочий день</div>
+                        </div>
                     </div>
-                    <div class="stat-card next-workday">
-                        <div class="stat-value" id="next-workday">-</div>
-                        <div class="stat-label">Ближайший рабочий день</div>
+                </div>
+
+                <!-- Заметки дня -->
+                <div class="day-notes-section">
+                    <h2>📝 Заметки дня</h2>
+                    <div id="selected-day-info" class="selected-day-info">Выберите день для просмотра заметок</div>
+                    <div id="day-notes-list" class="day-notes-list">
+                        <div class="no-notes">Заметок нет</div>
+                    </div>
+                    <!-- Кнопка для добавления заметки -->
+                    <div class="day-notes-actions">
+                        <button id="add-day-note" class="btn btn-primary">
+                            ➕ Добавить заметку
+                        </button>
                     </div>
                 </div>
             </div>
@@ -69,23 +81,6 @@
     </div>
 
     <!-- Модальные окна -->
-    <!-- Модальное окно заметок -->
-    <div id="notes-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title" id="notes-modal-title">Заметки</h3>
-                <button class="close-btn" onclick="closeNotesModal()">×</button>
-            </div>
-            <div id="notes-list" class="notes-list">
-                <!-- Заметки будут добавляться сюда -->
-            </div>
-            <div class="form-actions">
-                <button class="btn btn-outline" onclick="closeNotesModal()">Закрыть</button>
-                <button class="btn btn-primary" onclick="showAddNoteForm()">➕ Добавить заметку</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Модальное окно добавления заметки -->
     <div id="add-note-modal" class="modal">
         <div class="modal-content">
@@ -101,6 +96,29 @@
                 <div class="form-actions">
                     <button type="button" class="btn btn-outline" onclick="closeAddNoteModal()">Отмена</button>
                     <button type="submit" class="btn btn-primary">💾 Сохранить заметку</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно ответа на заметку -->
+    <div id="reply-note-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">💬 Ответить на заметку</h3>
+                <button class="close-btn" onclick="closeReplyModal()">×</button>
+            </div>
+            <form id="reply-note-form">
+                <div class="original-note" id="original-note-content">
+                    <!-- Оригинальная заметка будет здесь -->
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ваш ответ:</label>
+                    <textarea class="form-textarea" id="reply-text" placeholder="Введите ваш ответ..." required></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeReplyModal()">Отмена</button>
+                    <button type="submit" class="btn btn-primary">💾 Отправить ответ</button>
                 </div>
             </form>
         </div>
