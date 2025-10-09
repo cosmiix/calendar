@@ -9,7 +9,7 @@
 <body>
     <div class="container">
               <!-- Основной контент в две колонки -->
-        <div class="main-content">
+        <div class="main-content" style="grid-template-columns: 1fr;">
             <!-- Левая колонка - календарь -->
             <div class="calendar-column">
                 <!-- Панель управления -->
@@ -59,56 +59,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Правая колонка - события и заметки -->
-            <div class="events-column">
-                <!-- Предстоящие события -->
-                <div class="events-section">
-                    <h2>📋 Предстоящие события</h2>
-                    <div id="upcoming-events" class="events-list">
-                        <div class="no-events">Нет предстоящих событий</div>
-                    </div>
-                </div>
-
-                <!-- Быстрые заметки -->
-                <div class="quick-notes-section">
-                    <h2>📝 Быстрые заметки</h2>
-                    <div class="quick-notes-form">
-                        <textarea id="quick-note-text" placeholder="Добавьте быструю заметку..." class="quick-note-textarea"></textarea>
-                        <button id="add-quick-note" class="btn btn-primary">➕ Добавить</button>
-                    </div>
-                    <div id="quick-notes-list" class="quick-notes-list">
-                        <!-- Быстрые заметки будут здесь -->
-                    </div>
-                </div>
-
-                <!-- Легенда -->
-                <div class="legend-section">
-                    <h2>🎨 Легенда</h2>
-                    <div class="legend-grid">
-                        <div class="legend-item">
-                            <div class="legend-color today-legend"></div>
-                            <div class="legend-label">Сегодня</div>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color work-day-legend"></div>
-                            <div class="legend-label">Рабочий день</div>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color has-notes-legend"></div>
-                            <div class="legend-label">Есть заметки</div>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color weekend-legend"></div>
-                            <div class="legend-label">Выходной</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модальные окна (остаются без изменений) -->
     <!-- Модальное окно заметок -->
     <div id="notes-modal" class="modal">
         <div class="modal-content">
@@ -211,3 +161,4 @@
 </body>
 
 </html>
+
