@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Календарь рабочего графика</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+              <!-- Основной контент в две колонки -->
+        <div class="main-content">
+            <!-- Левая колонка - календарь -->
+            <div class="calendar-column">
+                <!-- Панель управления -->
+                <div class="nav">
+                    <div class="nav-group">
+                        <button id="prev-month" class="btn btn-outline btn-compact">←</button>
+                        <button id="current-month" class="btn btn-outline btn-compact">Сегодня</button>
+                        <button id="next-month" class="btn btn-outline btn-compact">→</button>
+                    </div>
+                    <div id="month-range" class="nav-title">Октябрь 2024</div>
+                    <button id="edit-toggle" class="btn btn-primary btn-compact">✏️ Редактировать</button>
+                </div>
+
+                <!-- Уведомление о режиме редактирования -->
+                <div id="edit-notice" class="edit-notice" style="display: none;">
+                    <strong>🔧 Режим редактирования активен</strong>
+                    <p>Нажимайте на дни для отметки рабочих дней и добавления заметок</p>
+                    <button id="save-changes" class="btn btn-secondary" style="margin-top: 10px;">💾 Сохранить изменения</button>
+                </div>
+
+                <!-- Календарь -->
+                <div class="calendar-section">
+                    <div class="weekdays-header">
+                        <div class="weekday">Пн</div>
+                        <div class="weekday">Вт</div>
+                        <div class="weekday">Ср</div>
+                        <div class="weekday">Чт</div>
+                        <div class="weekday">Пт</div>
+                        <div class="weekday">Сб</div>
+                        <div class="weekday">Вс</div>
+                    </div>
+                    <div class="month-calendar" id="monthCalendar"></div>
+                </div>
+
+                <!-- Статистика -->
+                <div class="stats-section">
+                    <h2>📊 Статистика месяца</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="total-work-days">0</div>
+                            <div class="stat-label">Рабочих дней</div>
+                        </div>
+                        <div class="stat-card next-workday">
+                            <div class="stat-value" id="next-workday">-</div>
+                            <div class="stat-label">Ближайший рабочий день</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Правая колонка - события и заметки -->
+            <div class="events-column">
+                <!-- Предстоящие события -->
+                <div class="events-section">
+                    <h2>📋 Предстоящие события</h2>
+                    <div id="upcoming-events" class="events-list">
+                        <div class="no-events">Нет предстоящих событий</div>
+                    </div>
+                </div>
+
+                <!-- Быстрые заметки -->
+                <div class="quick-notes-section">
+                    <h2>📝 Быстрые заметки</h2>
+                    <div class="quick-notes-form">
+                        <textarea id="quick-note-text" placeholder="Добавьте быструю заметку..." class="quick-note-textarea"></textarea>
+                        <button id="add-quick-note" class="btn btn-primary">➕ Добавить</button>
+                    </div>
+                    <div id="quick-notes-list" class="quick-notes-list">
+                        <!-- Быстрые заметки будут здесь -->
+                    </div>
+                </div>
+
+                <!-- Легенда -->
+                <div class="legend-section">
+                    <h2>🎨 Легенда</h2>
+                    <div class="legend-grid">
+                        <div class="legend-item">
+                            <div class="legend-color today-legend"></div>
+                            <div class="legend-label">Сегодня</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color work-day-legend"></div>
+                            <div class="legend-label">Рабочий день</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color has-notes-legend"></div>
+                            <div class="legend-label">Есть заметки</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color weekend-legend"></div>
+                            <div class="legend-label">Выходной</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальные окна (остаются без изменений) -->
+    <!-- Модальное окно заметок -->
+    <div id="notes-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="notes-modal-title">Заметки</h3>
+                <button class="close-btn" onclick="closeNotesModal()">×</button>
+            </div>
+            <div id="notes-list" class="notes-list">
+                <!-- Заметки будут добавляться сюда -->
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-outline" onclick="closeNotesModal()">Закрыть</button>
+                <button class="btn btn-primary" onclick="showAddNoteForm()">➕ Добавить заметку</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно добавления заметки -->
+    <div id="add-note-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="add-note-title">Добавить заметку</h3>
+                <button class="close-btn" onclick="closeAddNoteModal()">×</button>
+            </div>
+            <form id="add-note-form">
+                <div class="form-group">
+                    <label class="form-label">Текст заметки:</label>
+                    <textarea class="form-textarea" id="note-text" placeholder="Введите вашу заметку..." required></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeAddNoteModal()">Отмена</button>
+                    <button type="submit" class="btn btn-primary">💾 Сохранить заметку</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно выбора времени -->
+    <div id="time-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="time-modal-title">Выберите время работы</h3>
+                <button class="close-btn" onclick="closeTimeModal()">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Начало работы:</label>
+                <select class="form-select" id="work-time-start">
+                    <option value="07:30">07:30</option>
+                    <option value="09:00">09:00</option>
+                    <option value="12:00">12:00</option>
+                    <option value="13:15">13:15</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Окончание работы:</label>
+                <select class="form-select" id="work-time-end">
+                    <!-- Опции будут заполняться динамически -->
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" onclick="closeTimeModal()">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="saveWorkTime()">💾 Сохранить время</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно авторизации -->
+    <div id="auth-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">🔐 Выберите пользователя</h3>
+                <button class="close-btn" onclick="closeAuthModal()">×</button>
+            </div>
+            <form id="auth-form">
+                <div class="form-group">
+                    <label class="form-label">Выберите пользователя:</label>
+                    <select class="form-select" id="user-type">
+                        <option value="tanya">Таня (отметка дней)</option>
+                        <option value="dima">Дима (выбор времени)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Пароль:</label>
+                    <input type="password" class="form-input" id="password-input" placeholder="Введите пароль" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeAuthModal()">Отмена</button>
+                    <button type="submit" class="btn btn-primary">🔓 Войти</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Подключаем Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    
+    <!-- Основной скрипт -->
+    <script src="app.js"></script>
+</body>
+</html>
