@@ -28,11 +28,12 @@ try {
 // Глобальные переменные
 let currentMonth = new Date();
 let isEditMode = false;
-let userRole = null; // 'tanya' или 'dima'
+let userRole = null;
 let selectedDay = null;
 let selectedNote = null;
 let scheduleData = {};
 let notesData = {};
+
 const monthNames = [
     "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
     "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
@@ -40,16 +41,13 @@ const monthNames = [
 
 // Время окончания работы по дням недели
 const endTimeOptions = {
-    // Пн-Чт
-    1: ["16:30", "18:00", "21:00"],
-    2: ["16:30", "18:00", "21:00"],
-    3: ["16:30", "18:00", "21:00"],
-    4: ["16:30", "18:00", "21:00"],
-    // Пт
-    5: ["15:15", "16:45", "21:00"],
-    // Сб-Вс (по умолчанию)
-    0: ["16:30", "18:00", "21:00"],
-    6: ["16:30", "18:00", "21:00"]
+    1: ["16:30", "18:00", "21:00"], // Пн
+    2: ["16:30", "18:00", "21:00"], // Вт
+    3: ["16:30", "18:00", "21:00"], // Ср
+    4: ["16:30", "18:00", "21:00"], // Чт
+    5: ["15:15", "16:45", "21:00"], // Пт
+    0: ["16:30", "18:00", "21:00"], // Вс
+    6: ["16:30", "18:00", "21:00"]  // Сб
 };
 
 // Инициализация приложения
@@ -64,28 +62,41 @@ async function initializeApp() {
     updateStats();
 }
 
-// Загрузка данных
+// Загрузка данных из Firebase
 async function loadData() {
-    if (db) {
-        try {
-            // Загружаем расписание
-            const scheduleSnapshot = await db.collection('schedule').get();
-            scheduleData = {};
-            scheduleSnapshot.forEach(doc => {
-                scheduleData[doc.id] = doc.data();
-            });
+    if (!db) {
+        console.warn('Firebase не инициализирован');
+        return;
+    }
 
-            // Загружаем заметки
-            const notesSnapshot = await db.collection('notes').get();
-            notesData = {};
-            notesSnapshot.forEach(doc => {
-                const data = doc.data();
-                if (!notesData[data.date]) notesData[data.date] = [];
-                notesData[data.date].push(data);
+    try {
+        // Загружаем расписание
+        const scheduleSnapshot = await db.collection('schedule').get();
+        scheduleData = {};
+        scheduleSnapshot.forEach(doc => {
+            scheduleData[doc.id] = doc.data();
+        });
+
+        // Загружаем заметки и сортируем по дате создания
+        const notesSnapshot = await db.collection('notes').orderBy('timestamp', 'desc').get();
+        notesData = {};
+        notesSnapshot.forEach(doc => {
+            const noteData = doc.data();
+            const dateKey = formatDate(new Date(noteData.timestamp));
+            
+            if (!notesData[dateKey]) {
+                notesData[dateKey] = [];
+            }
+            
+            notesData[dateKey].push({
+                id: doc.id,
+                ...noteData
             });
-        } catch (error) {
-            console.error('Ошибка загрузки данных:', error);
-        }
+        });
+
+        console.log('✅ Данные загружены из Firebase');
+    } catch (error) {
+        console.error('❌ Ошибка загрузки данных:', error);
     }
 }
 
@@ -119,9 +130,6 @@ function setupEventListeners() {
         }
     });
 
-    // Кнопка сохранения
-    document.getElementById('save-changes').addEventListener('click', exitEditMode);
-
     // Форма авторизации
     document.getElementById('auth-form').addEventListener('submit', handleAuth);
 
@@ -132,25 +140,20 @@ function setupEventListeners() {
     document.getElementById('reply-note-form').addEventListener('submit', handleReplyNote);
 
     // Кнопка добавления заметки в боковой панели
-    const addDayNoteBtn = document.getElementById('add-day-note');
-    if (addDayNoteBtn) {
-        addDayNoteBtn.addEventListener('click', function() {
-            if (selectedDay) {
-                showAddNoteForm();
-            } else {
-                alert('Сначала выберите день');
-            }
-        });
-    }
+    document.getElementById('add-day-note').addEventListener('click', function() {
+        if (selectedDay) {
+            showAddNoteForm();
+        } else {
+            alert('Сначала выберите день');
+        }
+    });
 }
 
 // Рендер календаря
 function renderCalendar() {
     const calendar = document.getElementById('monthCalendar');
-    if (!calendar) {
-        console.error('Элемент monthCalendar не найден');
-        return;
-    }
+    if (!calendar) return;
+    
     calendar.innerHTML = '';
 
     const year = currentMonth.getFullYear();
@@ -197,7 +200,7 @@ function createDayElement(date, isOtherMonth) {
     const dayElement = document.createElement('div');
     dayElement.className = 'month-day';
     
-    const dayKey = date.toISOString().split('T')[0];
+    const dayKey = formatDate(date);
     const dayOfWeek = date.getDay();
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
     const isWorkDay = scheduleData[dayKey]?.isWorkDay || false;
@@ -236,10 +239,7 @@ function createDayElement(date, isOtherMonth) {
         dayElement.addEventListener('click', () => handleDayClick(date, dayKey, isWorkDay));
     }
 
-    const monthCalendar = document.getElementById('monthCalendar');
-    if (monthCalendar) {
-        monthCalendar.appendChild(dayElement);
-    }
+    document.getElementById('monthCalendar').appendChild(dayElement);
 }
 
 // Обработчик клика по дню
@@ -263,10 +263,7 @@ function showDayNotes(date, dayKey) {
     const selectedDayInfo = document.getElementById('selected-day-info');
     const dayNotesList = document.getElementById('day-notes-list');
     
-    if (!selectedDayInfo || !dayNotesList) {
-        console.warn('Элементы боковой панели не найдены');
-        return;
-    }
+    if (!selectedDayInfo || !dayNotesList) return;
     
     // Обновляем информацию о выбранном дне
     const dateStr = date.toLocaleDateString('ru-RU', { 
@@ -281,7 +278,6 @@ function showDayNotes(date, dayKey) {
     const dayNotes = notesData[dayKey] || [];
     
     if (dayNotes.length > 0) {
-        // Показываем заметки с кнопками действий
         dayNotesList.innerHTML = dayNotes.map((note, index) => `
             <div class="day-note-item">
                 <div class="day-note-text">${note.text}</div>
@@ -303,10 +299,10 @@ function showDayNotes(date, dayKey) {
                     </div>
                 ` : ''}
                 <div class="day-note-actions">
-                    <button class="btn btn-reply" onclick="showReplyModal('${dayKey}', ${index})">
+                    <button class="btn btn-reply" onclick="showReplyModal('${dayKey}', '${note.id}')">
                         💬 Ответить
                     </button>
-                    <button class="btn btn-danger" onclick="deleteNote('${dayKey}', ${index})">
+                    <button class="btn btn-danger" onclick="deleteNote('${note.id}')">
                         🗑️ Удалить
                     </button>
                 </div>
@@ -318,35 +314,41 @@ function showDayNotes(date, dayKey) {
 }
 
 // Функция удаления заметки
-async function deleteNote(dayKey, noteIndex) {
+async function deleteNote(noteId) {
     if (!confirm('Вы уверены, что хотите удалить эту заметку?')) {
         return;
     }
     
-    if (notesData[dayKey] && notesData[dayKey][noteIndex]) {
-        // Удаляем из локальных данных
-        notesData[dayKey].splice(noteIndex, 1);
+    if (!db) {
+        alert('Firebase не инициализирован');
+        return;
+    }
+    
+    try {
+        await db.collection('notes').doc(noteId).delete();
         
-        // Если массив пустой, удаляем ключ
-        if (notesData[dayKey].length === 0) {
-            delete notesData[dayKey];
-        }
+        // Перезагружаем данные из Firebase
+        await loadData();
         
         // Обновляем отображение
-        showDayNotes(selectedDay.date, dayKey);
+        if (selectedDay) {
+            showDayNotes(selectedDay.date, selectedDay.dayKey);
+        }
         renderCalendar();
         
-        // TODO: Удаление из Firebase (нужно хранить ID заметок)
-        console.log('Заметка удалена локально');
+        console.log('✅ Заметка удалена из Firebase');
+    } catch (error) {
+        console.error('❌ Ошибка удаления заметки:', error);
+        alert('Ошибка при удалении заметки');
     }
 }
 
 // Функция показа модального окна ответа
-function showReplyModal(dayKey, noteIndex) {
-    const note = notesData[dayKey][noteIndex];
+function showReplyModal(dayKey, noteId) {
+    const note = notesData[dayKey]?.find(n => n.id === noteId);
     if (!note) return;
     
-    selectedNote = { dayKey, noteIndex, note };
+    selectedNote = { dayKey, noteId, note };
     
     const modal = document.getElementById('reply-note-modal');
     const originalNote = document.getElementById('original-note-content');
@@ -366,27 +368,36 @@ function showReplyModal(dayKey, noteIndex) {
 // Функция обработки ответа на заметку
 async function handleReplyNote(e) {
     e.preventDefault();
+    
+    if (!selectedNote || !db) return;
+    
     const replyText = document.getElementById('reply-text').value.trim();
+    if (!replyText) return;
     
-    if (!replyText || !selectedNote) return;
-    
-    const { dayKey, noteIndex, note } = selectedNote;
-    
-    // Добавляем ответ к заметке
-    note.reply = {
-        text: replyText,
-        timestamp: new Date().toISOString()
-    };
-    
-    // Обновляем локальные данные
-    notesData[dayKey][noteIndex] = note;
-    
-    // Обновляем отображение
-    showDayNotes(selectedDay.date, dayKey);
-    closeReplyModal();
-    
-    // TODO: Сохранение в Firebase
-    console.log('Ответ добавлен локально');
+    try {
+        const replyData = {
+            text: replyText,
+            timestamp: new Date().toISOString()
+        };
+        
+        await db.collection('notes').doc(selectedNote.noteId).update({
+            reply: replyData
+        });
+        
+        // Перезагружаем данные из Firebase
+        await loadData();
+        
+        // Обновляем отображение
+        if (selectedDay) {
+            showDayNotes(selectedDay.date, selectedDay.dayKey);
+        }
+        
+        closeReplyModal();
+        console.log('✅ Ответ сохранен в Firebase');
+    } catch (error) {
+        console.error('❌ Ошибка сохранения ответа:', error);
+        alert('Ошибка при сохранении ответа');
+    }
 }
 
 // Закрытие модального окна ответа
@@ -398,11 +409,13 @@ function closeReplyModal() {
     selectedNote = null;
 }
 
-// Остальные функции остаются без изменений...
-// [Здесь должны быть все остальные функции из предыдущего кода: toggleWorkDay, showTimeModal, closeTimeModal, showAddNoteForm, closeAddNoteModal, showAuthModal, closeAuthModal, handleAuth, handleAddNote, saveWorkTime, enterEditMode, exitEditMode, updateStats]
-
 // Новая функция для переключения рабочего дня (для Тани)
 async function toggleWorkDay() {
+    if (!db) {
+        alert('Firebase не инициализирован');
+        return;
+    }
+    
     const wasWorkDay = scheduleData[selectedDay.dayKey]?.isWorkDay || false;
     const newWorkDayState = !wasWorkDay;
     
@@ -410,29 +423,29 @@ async function toggleWorkDay() {
     const existingTimeStart = scheduleData[selectedDay.dayKey]?.timeStart || '';
     const existingTimeEnd = scheduleData[selectedDay.dayKey]?.timeEnd || '';
     
-    // Обновляем локальные данные - сохраняем время
-    scheduleData[selectedDay.dayKey] = {
-        isWorkDay: newWorkDayState,
-        timeStart: existingTimeStart, // Сохраняем время
-        timeEnd: existingTimeEnd      // Сохраняем время
-    };
-    
-    // Сохраняем в Firebase
-    if (db) {
-        try {
-            await db.collection('schedule').doc(selectedDay.dayKey).set({
-                isWorkDay: newWorkDayState,
-                timeStart: existingTimeStart, // Сохраняем время
-                timeEnd: existingTimeEnd,     // Сохраняем время
-                date: selectedDay.dayKey
-            }, { merge: true });
-        } catch (error) {
-            console.error('Ошибка сохранения:', error);
-        }
+    try {
+        await db.collection('schedule').doc(selectedDay.dayKey).set({
+            isWorkDay: newWorkDayState,
+            timeStart: existingTimeStart,
+            timeEnd: existingTimeEnd,
+            date: selectedDay.dayKey,
+            updatedAt: new Date().toISOString()
+        }, { merge: true });
+        
+        // Обновляем локальные данные
+        scheduleData[selectedDay.dayKey] = {
+            isWorkDay: newWorkDayState,
+            timeStart: existingTimeStart,
+            timeEnd: existingTimeEnd
+        };
+        
+        renderCalendar();
+        updateStats();
+        console.log('✅ Рабочий день обновлен в Firebase');
+    } catch (error) {
+        console.error('❌ Ошибка сохранения:', error);
+        alert('Ошибка при сохранении изменений');
     }
-    
-    renderCalendar();
-    updateStats();
 }
 
 // Модальные окна
@@ -442,10 +455,7 @@ function showTimeModal() {
     const timeStartSelect = document.getElementById('work-time-start');
     const timeEndSelect = document.getElementById('work-time-end');
     
-    if (!modal || !title || !timeStartSelect || !timeEndSelect) {
-        console.error('Элементы модального окна времени не найдены');
-        return;
-    }
+    if (!modal || !title || !timeStartSelect || !timeEndSelect) return;
     
     const dateStr = selectedDay.date.toLocaleDateString('ru-RU');
     title.textContent = `Время работы на ${dateStr}`;
@@ -454,12 +464,12 @@ function showTimeModal() {
     if (scheduleData[selectedDay.dayKey]?.timeStart) {
         timeStartSelect.value = scheduleData[selectedDay.dayKey].timeStart;
     } else {
-        timeStartSelect.value = '09:00'; // значение по умолчанию
+        timeStartSelect.value = '09:00';
     }
     
     // Заполняем варианты окончания работы в зависимости от дня недели
     const dayOfWeek = selectedDay.date.getDay();
-    const endTimes = endTimeOptions[dayOfWeek] || endTimeOptions[1]; // По умолчанию Пн-Чт
+    const endTimes = endTimeOptions[dayOfWeek] || endTimeOptions[1];
     
     timeEndSelect.innerHTML = '';
     endTimes.forEach(time => {
@@ -473,7 +483,7 @@ function showTimeModal() {
     if (scheduleData[selectedDay.dayKey]?.timeEnd) {
         timeEndSelect.value = scheduleData[selectedDay.dayKey].timeEnd;
     } else {
-        timeEndSelect.value = endTimes[0]; // первое значение по умолчанию
+        timeEndSelect.value = endTimes[0];
     }
     
     modal.style.display = 'flex';
@@ -490,10 +500,7 @@ function showAddNoteForm() {
     const modal = document.getElementById('add-note-modal');
     const title = document.getElementById('add-note-title');
     
-    if (!modal || !title) {
-        console.error('Элементы модального окна добавления заметки не найдены');
-        return;
-    }
+    if (!modal || !title) return;
     
     const dateStr = selectedDay.date.toLocaleDateString('ru-RU');
     title.textContent = `Добавить заметку на ${dateStr}`;
@@ -553,66 +560,70 @@ async function handleAuth(e) {
 
 async function handleAddNote(e) {
     e.preventDefault();
-    const noteText = document.getElementById('note-text').value.trim();
     
+    if (!selectedDay || !db) return;
+    
+    const noteText = document.getElementById('note-text').value.trim();
     if (!noteText) return;
     
-    const note = {
-        text: noteText,
-        timestamp: new Date().toISOString(),
-        date: selectedDay.dayKey
-    };
-    
-    // Сохраняем локально
-    if (!notesData[selectedDay.dayKey]) notesData[selectedDay.dayKey] = [];
-    notesData[selectedDay.dayKey].push(note);
-    
-    // Сохраняем в Firebase
-    if (db) {
-        try {
-            await db.collection('notes').add(note);
-        } catch (error) {
-            console.error('Ошибка сохранения заметки:', error);
-        }
+    try {
+        const noteData = {
+            text: noteText,
+            timestamp: new Date().toISOString(),
+            date: selectedDay.dayKey
+        };
+        
+        await db.collection('notes').add(noteData);
+        
+        // Перезагружаем данные из Firebase
+        await loadData();
+        
+        closeAddNoteModal();
+        
+        // Обновляем отображение заметок в боковой панели
+        showDayNotes(selectedDay.date, selectedDay.dayKey);
+        
+        // Обновляем индикатор заметок в календаре
+        renderCalendar();
+        
+        console.log('✅ Заметка сохранена в Firebase');
+    } catch (error) {
+        console.error('❌ Ошибка сохранения заметки:', error);
+        alert('Ошибка при сохранении заметки');
     }
-    
-    closeAddNoteModal();
-    
-    // Обновляем отображение заметок в боковой панели
-    showDayNotes(selectedDay.date, selectedDay.dayKey);
-    
-    // Обновляем индикатор заметок в календаре
-    renderCalendar();
 }
 
 async function saveWorkTime() {
+    if (!selectedDay || !db) return;
+    
     const workTimeStart = document.getElementById('work-time-start').value;
     const workTimeEnd = document.getElementById('work-time-end').value;
     
-    // Обновляем локальные данные - ТОЛЬКО время, не меняем статус рабочего дня
-    scheduleData[selectedDay.dayKey] = {
-        ...scheduleData[selectedDay.dayKey],
-        timeStart: workTimeStart,
-        timeEnd: workTimeEnd
-    };
-    
-    // Сохраняем в Firebase
-    if (db) {
-        try {
-            await db.collection('schedule').doc(selectedDay.dayKey).set({
-                ...scheduleData[selectedDay.dayKey],
-                timeStart: workTimeStart,
-                timeEnd: workTimeEnd,
-                date: selectedDay.dayKey
-            }, { merge: true });
-        } catch (error) {
-            console.error('Ошибка сохранения времени:', error);
-        }
+    try {
+        await db.collection('schedule').doc(selectedDay.dayKey).set({
+            isWorkDay: true,
+            timeStart: workTimeStart,
+            timeEnd: workTimeEnd,
+            date: selectedDay.dayKey,
+            updatedAt: new Date().toISOString()
+        }, { merge: true });
+        
+        // Обновляем локальные данные
+        scheduleData[selectedDay.dayKey] = {
+            ...scheduleData[selectedDay.dayKey],
+            isWorkDay: true,
+            timeStart: workTimeStart,
+            timeEnd: workTimeEnd
+        };
+        
+        closeTimeModal();
+        renderCalendar();
+        updateStats();
+        console.log('✅ Время работы сохранено в Firebase');
+    } catch (error) {
+        console.error('❌ Ошибка сохранения времени:', error);
+        alert('Ошибка при сохранении времени');
     }
-    
-    closeTimeModal();
-    renderCalendar();
-    updateStats();
 }
 
 // Управление режимом редактирования
@@ -664,7 +675,7 @@ function updateStats() {
     // Считаем рабочие дни и находим ближайший
     for (let day = 1; day <= lastDay; day++) {
         const currentDay = new Date(year, month, day);
-        const dayKey = currentDay.toISOString().split('T')[0];
+        const dayKey = formatDate(currentDay);
         
         if (scheduleData[dayKey]?.isWorkDay) {
             workDays++;
@@ -692,3 +703,21 @@ function updateStats() {
         }
     }
 }
+
+// Вспомогательная функция для форматирования даты
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+// Закрытие модальных окон при клике вне их
+window.addEventListener('click', function(event) {
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+});
