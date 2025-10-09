@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Календарь рабочего графика</title>
+    <title>Календарь</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -20,14 +20,14 @@
                         <button id="next-month" class="btn btn-outline btn-compact">→</button>
                     </div>
                     <div id="month-range" class="nav-title">Октябрь 2024</div>
-                    <button id="edit-toggle" class="btn btn-primary btn-compact">✏️ Редактировать</button>
+                    <button id="edit-toggle" class="btn btn-primary btn-compact">Редактировать</button>
                 </div>
 
                 <!-- Уведомление о режиме редактирования -->
                 <div id="edit-notice" class="edit-notice" style="display: none;">
                     <strong>🔧 Режим редактирования активен</strong>
                     <p>Нажимайте на дни для отметки рабочих дней и добавления заметок</p>
-                    <button id="save-changes" class="btn btn-secondary" style="margin-top: 10px;">💾 Сохранить изменения</button>
+                    <button id="save-changes" class="btn btn-secondary" style="margin-top: 10px;">💾Сохранить</button>
                 </div>
 
                 <!-- Календарь -->
@@ -140,7 +140,7 @@
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-outline" onclick="closeAddNoteModal()">Отмена</button>
-                    <button type="submit" class="btn btn-primary">💾 Сохранить заметку</button>
+                    <button type="submit" class="btn btn-primary">💾Сохранить</button>
                 </div>
             </form>
         </div>
@@ -150,11 +150,11 @@
     <div id="time-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title" id="time-modal-title">Выберите время работы</h3>
+                <h3 class="modal-title" id="time-modal-title">Выберите время</h3>
                 <button class="close-btn" onclick="closeTimeModal()">×</button>
             </div>
             <div class="form-group">
-                <label class="form-label">Начало работы:</label>
+                <label class="form-label">Начало:</label>
                 <select class="form-select" id="work-time-start">
                     <option value="07:30">07:30</option>
                     <option value="09:00">09:00</option>
@@ -163,14 +163,14 @@
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">Окончание работы:</label>
+                <label class="form-label">Окончание:</label>
                 <select class="form-select" id="work-time-end">
                     <!-- Опции будут заполняться динамически -->
                 </select>
             </div>
             <div class="form-actions">
                 <button type="button" class="btn btn-outline" onclick="closeTimeModal()">Отмена</button>
-                <button type="button" class="btn btn-primary" onclick="saveWorkTime()">💾 Сохранить время</button>
+                <button type="button" class="btn btn-primary" onclick="saveWorkTime()">💾Сохранить</button>
             </div>
         </div>
     </div>
@@ -179,15 +179,15 @@
     <div id="auth-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">🔐 Выберите пользователя</h3>
+                <h3 class="modal-title">Выберите пользователя</h3>
                 <button class="close-btn" onclick="closeAuthModal()">×</button>
             </div>
             <form id="auth-form">
                 <div class="form-group">
                     <label class="form-label">Выберите пользователя:</label>
                     <select class="form-select" id="user-type">
-                        <option value="tanya">Таня (отметка дней)</option>
-                        <option value="dima">Дима (выбор времени)</option>
+                        <option value="tanya">Таня</option>
+                        <option value="dima">Дима</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -196,7 +196,7 @@
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-outline" onclick="closeAuthModal()">Отмена</button>
-                    <button type="submit" class="btn btn-primary">🔓 Войти</button>
+                    <button type="submit" class="btn btn-primary">Войти</button>
                 </div>
             </form>
         </div>
@@ -209,4 +209,5 @@
     <!-- Основной скрипт -->
     <script src="app.js"></script>
 </body>
+
 </html>
