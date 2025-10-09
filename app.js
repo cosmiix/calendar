@@ -634,17 +634,17 @@ function enterEditMode() {
     // Обновляем текст уведомления в зависимости от роли
     const notice = document.getElementById('edit-notice');
     if (userRole === 'tanya') {
-        notice.innerHTML = `<strong>🔧 Режим Тани активен</strong>
-            <p>Нажимайте на дни для отметки рабочих/выходных дней</p>
-            <button id="save-changes" class="btn btn-secondary" style="margin-top: 10px;">💾 Сохранить изменения</button>`;
+        notice.innerHTML = `
+            <p>Нажимайте на дни для отметки рабочих дней</p>
+            <button id="save-changes" class="btn btn-secondary" style="margin-top: 10px;">💾Сохранить</button>`;
     } else if (userRole === 'dima') {
-        notice.innerHTML = `<strong>🔧 Режим Димы активен</strong>
-            <p>Нажимайте на дни для выбора времени работы</p>
-            <button id="save-changes" class="btn btn-secondary" style="margin-top: 10px;">💾 Сохранить изменения</button>`;
+        notice.innerHTML = `
+            <p>Нажимайте на дни для выбора времени</p>
+            <button id="save-changes" class="btn btn-secondary" style="margin-top: 10px;">💾Сохранить</button>`;
     }
     
     document.getElementById('edit-notice').style.display = 'block';
-    document.getElementById('edit-toggle').textContent = '🚫 Завершить редактирование';
+    document.getElementById('edit-toggle').textContent = 'Завершить редактирование';
     document.getElementById('edit-toggle').classList.remove('btn-primary');
     document.getElementById('edit-toggle').classList.add('btn-secondary');
     
@@ -721,4 +721,5 @@ window.addEventListener('click', function(event) {
         }
     });
 });
+
 
