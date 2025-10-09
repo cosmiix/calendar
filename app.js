@@ -10,8 +10,8 @@ const firebaseConfig = {
 };
 
 // 🔐 ПАРОЛИ ДЛЯ РЕДАКТИРОВАНИЯ (sha256 хеш)
-const ADMIN_PASSWORD_HASH = "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"; // Пароль: 123456
-const MANAGER_PASSWORD_HASH = "b2d78a0f6f3d76b28d5367d65bdd031f6704f25f2d3fe6c3d2d3b4a6f6c1a2c6"; // Пароль: manager123
+const ADMIN_PASSWORD_HASH = "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"; 
+const MANAGER_PASSWORD_HASH = "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"; 
 
 // Инициализация Firebase
 let db = null;
@@ -721,3 +721,4 @@ window.addEventListener('click', function(event) {
         }
     });
 });
+
