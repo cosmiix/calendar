@@ -11,7 +11,6 @@ const firebaseConfig = {
 
 // 🔐 ПАРОЛИ ДЛЯ РЕДАКТИРОВАНИЯ (sha256 хеш)
 const ADMIN_PASSWORD_HASH = "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"; 
-const MANAGER_PASSWORD_HASH = "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"; 
 
 // Инициализация Firebase
 let db = null;
@@ -29,6 +28,7 @@ try {
 let currentMonth = new Date();
 let isEditMode = false;
 let userRole = null;
+let currentUser = null;
 let selectedDay = null;
 let selectedNote = null;
 let scheduleData = {};
@@ -52,14 +52,42 @@ const endTimeOptions = {
 
 // Инициализация приложения
 document.addEventListener('DOMContentLoaded', function() {
-    initializeApp();
+    checkSavedAuth();
+    setupEventListeners();
 });
 
-async function initializeApp() {
-    await loadData();
-    setupEventListeners();
-    renderCalendar();
-    updateStats();
+// Проверка сохраненной авторизации
+function checkSavedAuth() {
+    const savedUser = localStorage.getItem('calendarUser');
+    const savedRole = localStorage.getItem('calendarUserRole');
+    
+    if (savedUser && savedRole) {
+        userRole = savedRole;
+        currentUser = savedUser;
+        
+        // Скрываем модальное окно входа и показываем основной интерфейс
+        document.getElementById('login-modal').style.display = 'none';
+        document.querySelector('.container').style.display = 'block';
+        
+        // Обновляем информацию о пользователе
+        document.getElementById('current-user').textContent = currentUser;
+        
+        // Загружаем данные
+        loadData();
+        
+        console.log('✅ Пользователь авторизован из localStorage:', currentUser);
+    } else {
+        // Показываем окно входа
+        document.getElementById('login-modal').style.display = 'flex';
+    }
+}
+
+// Сохранение авторизации
+function saveAuth() {
+    if (currentUser && userRole) {
+        localStorage.setItem('calendarUser', currentUser);
+        localStorage.setItem('calendarUserRole', userRole);
+    }
 }
 
 // Загрузка данных из Firebase
@@ -82,7 +110,7 @@ async function loadData() {
         notesData = {};
         notesSnapshot.forEach(doc => {
             const noteData = doc.data();
-            const dateKey = formatDate(new Date(noteData.timestamp));
+            const dateKey = noteData.date; // Используем поле date из заметки
             
             if (!notesData[dateKey]) {
                 notesData[dateKey] = [];
@@ -95,6 +123,10 @@ async function loadData() {
         });
 
         console.log('✅ Данные загружены из Firebase');
+        
+        // Рендерим календарь и статистику после загрузки данных
+        renderCalendar();
+        updateStats();
     } catch (error) {
         console.error('❌ Ошибка загрузки данных:', error);
     }
@@ -102,6 +134,9 @@ async function loadData() {
 
 // Настройка обработчиков событий
 function setupEventListeners() {
+    // Форма входа при запуске
+    document.getElementById('login-form').addEventListener('submit', handleLogin);
+
     // Навигация по месяцам
     document.getElementById('prev-month').addEventListener('click', () => {
         currentMonth.setMonth(currentMonth.getMonth() - 1);
@@ -126,12 +161,9 @@ function setupEventListeners() {
         if (isEditMode) {
             exitEditMode();
         } else {
-            showAuthModal();
+            enterEditMode(); // Убрана повторная авторизация
         }
     });
-
-    // Форма авторизации
-    document.getElementById('auth-form').addEventListener('submit', handleAuth);
 
     // Форма добавления заметки
     document.getElementById('add-note-form').addEventListener('submit', handleAddNote);
@@ -147,6 +179,50 @@ function setupEventListeners() {
             alert('Сначала выберите день');
         }
     });
+
+    // Запрещаем закрытие модального окна авторизации при клике вне его
+    document.getElementById('login-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
+}
+
+// Обработка входа в систему
+async function handleLogin(e) {
+    e.preventDefault();
+    const password = document.getElementById('login-password-input').value;
+    const userType = document.getElementById('login-user-type').value;
+    
+    // Хешируем пароль и проверяем
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    if ((userType === 'tanya' || userType === 'dima') && hashHex === ADMIN_PASSWORD_HASH) {
+        userRole = userType;
+        currentUser = userType === 'tanya' ? 'Таня' : 'Дима';
+        
+        // Сохраняем авторизацию
+        saveAuth();
+        
+        // Скрываем модальное окно входа и показываем основной интерфейс
+        document.getElementById('login-modal').style.display = 'none';
+        document.querySelector('.container').style.display = 'block';
+        
+        // Обновляем информацию о пользователе
+        document.getElementById('current-user').textContent = currentUser;
+        
+        // Загружаем данные
+        await loadData();
+        
+        console.log('✅ Пользователь авторизован:', currentUser);
+    } else {
+        alert('❌ Неверный пароль');
+    }
 }
 
 // Рендер календаря
@@ -280,22 +356,32 @@ function showDayNotes(date, dayKey) {
     if (dayNotes.length > 0) {
         dayNotesList.innerHTML = dayNotes.map((note, index) => `
             <div class="day-note-item">
+                <div class="day-note-meta">
+                    <span class="day-note-author">${note.author || 'Автор'}</span>
+                    <span class="day-note-time">${new Date(note.timestamp).toLocaleString('ru-RU', { 
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        day: '2-digit',
+                        month: '2-digit'
+                    })}</span>
+                </div>
                 <div class="day-note-text">${note.text}</div>
-                <div class="day-note-time">${new Date(note.timestamp).toLocaleString('ru-RU', { 
-                    hour: '2-digit', 
-                    minute: '2-digit',
-                    day: '2-digit',
-                    month: '2-digit'
-                })}</div>
-                ${note.reply ? `
-                    <div class="note-reply">
-                        <div class="reply-text"><strong>Ответ:</strong> ${note.reply.text}</div>
-                        <div class="reply-time">${new Date(note.reply.timestamp).toLocaleString('ru-RU', { 
-                            hour: '2-digit', 
-                            minute: '2-digit',
-                            day: '2-digit',
-                            month: '2-digit'
-                        })}</div>
+                ${note.replies && note.replies.length > 0 ? `
+                    <div class="replies-list">
+                        ${note.replies.map(reply => `
+                            <div class="reply-item">
+                                <div class="reply-meta">
+                                    <span class="reply-author">${reply.author || 'Автор'}</span>
+                                    <span class="reply-time">${new Date(reply.timestamp).toLocaleString('ru-RU', { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit',
+                                        day: '2-digit',
+                                        month: '2-digit'
+                                    })}</span>
+                                </div>
+                                <div class="reply-text">${reply.text}</div>
+                            </div>
+                        `).join('')}
                     </div>
                 ` : ''}
                 <div class="day-note-actions">
@@ -356,8 +442,11 @@ function showReplyModal(dayKey, noteId) {
     if (modal && originalNote) {
         originalNote.innerHTML = `
             <strong>Оригинальная заметка:</strong><br>
-            ${note.text}<br>
-            <small>${new Date(note.timestamp).toLocaleString('ru-RU')}</small>
+            <div class="day-note-meta">
+                <span class="day-note-author">${note.author || 'Автор'}</span>
+                <span class="day-note-time">${new Date(note.timestamp).toLocaleString('ru-RU')}</span>
+            </div>
+            ${note.text}
         `;
         
         document.getElementById('reply-text').value = '';
@@ -377,11 +466,20 @@ async function handleReplyNote(e) {
     try {
         const replyData = {
             text: replyText,
+            author: currentUser,
             timestamp: new Date().toISOString()
         };
         
+        // Получаем текущую заметку
+        const noteDoc = await db.collection('notes').doc(selectedNote.noteId).get();
+        const noteData = noteDoc.data();
+        
+        // Создаем или обновляем массив ответов
+        const replies = noteData.replies || [];
+        replies.push(replyData);
+        
         await db.collection('notes').doc(selectedNote.noteId).update({
-            reply: replyData
+            replies: replies
         });
         
         // Перезагружаем данные из Firebase
@@ -516,48 +614,6 @@ function closeAddNoteModal() {
     }
 }
 
-function showAuthModal() {
-    const modal = document.getElementById('auth-modal');
-    if (modal) {
-        modal.style.display = 'flex';
-        document.getElementById('password-input').value = '';
-        document.getElementById('user-type').value = 'tanya';
-    }
-}
-
-function closeAuthModal() {
-    const modal = document.getElementById('auth-modal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
-
-// Обработчики форм
-async function handleAuth(e) {
-    e.preventDefault();
-    const password = document.getElementById('password-input').value;
-    const userType = document.getElementById('user-type').value;
-    
-    // Хешируем пароль и проверяем
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    
-    if (userType === 'tanya' && hashHex === ADMIN_PASSWORD_HASH) {
-        userRole = 'tanya';
-        enterEditMode();
-        closeAuthModal();
-    } else if (userType === 'dima' && hashHex === MANAGER_PASSWORD_HASH) {
-        userRole = 'dima';
-        enterEditMode();
-        closeAuthModal();
-    } else {
-        alert('❌ Неверный пароль');
-    }
-}
-
 async function handleAddNote(e) {
     e.preventDefault();
     
@@ -569,8 +625,9 @@ async function handleAddNote(e) {
     try {
         const noteData = {
             text: noteText,
+            author: currentUser,
             timestamp: new Date().toISOString(),
-            date: selectedDay.dayKey
+            date: selectedDay.dayKey // Сохраняем выбранную дату
         };
         
         await db.collection('notes').add(noteData);
@@ -600,20 +657,25 @@ async function saveWorkTime() {
     const workTimeEnd = document.getElementById('work-time-end').value;
     
     try {
-        await db.collection('schedule').doc(selectedDay.dayKey).set({
-            isWorkDay: true,
+        // Для Димы не меняем статус рабочего дня, только время
+        const updateData = {
             timeStart: workTimeStart,
             timeEnd: workTimeEnd,
             date: selectedDay.dayKey,
             updatedAt: new Date().toISOString()
-        }, { merge: true });
+        };
+        
+        // Если день уже рабочий, сохраняем этот статус
+        if (scheduleData[selectedDay.dayKey]?.isWorkDay) {
+            updateData.isWorkDay = true;
+        }
+        
+        await db.collection('schedule').doc(selectedDay.dayKey).set(updateData, { merge: true });
         
         // Обновляем локальные данные
         scheduleData[selectedDay.dayKey] = {
             ...scheduleData[selectedDay.dayKey],
-            isWorkDay: true,
-            timeStart: workTimeStart,
-            timeEnd: workTimeEnd
+            ...updateData
         };
         
         closeTimeModal();
@@ -633,14 +695,12 @@ function enterEditMode() {
     
     // Обновляем текст уведомления в зависимости от роли
     const notice = document.getElementById('edit-notice');
+    const description = document.getElementById('edit-mode-description');
+    
     if (userRole === 'tanya') {
-        notice.innerHTML = `
-            <p>Нажимайте на дни для отметки рабочих дней</p>
-            <button id="save-changes" class="btn btn-secondary" style="margin-top: 10px;">Сохранить</button>`;
+        description.textContent = 'Нажимайте на дни для отметки рабочих дней';
     } else if (userRole === 'dima') {
-        notice.innerHTML = `
-            <p>Нажимайте на дни для выбора времени</p>
-            <button id="save-changes" class="btn btn-secondary" style="margin-top: 10px;">Сохранить</button>`;
+        description.textContent = 'Нажимайте на дни для выбора времени работы';
     }
     
     document.getElementById('edit-notice').style.display = 'block';
@@ -654,7 +714,6 @@ function enterEditMode() {
 
 function exitEditMode() {
     isEditMode = false;
-    userRole = null;
     document.body.classList.remove('edit-mode', 'role-tanya', 'role-dima');
     document.getElementById('edit-notice').style.display = 'none';
     document.getElementById('edit-toggle').textContent = 'Edit';
@@ -712,15 +771,13 @@ function formatDate(date) {
     return `${year}-${month}-${day}`;
 }
 
-// Закрытие модальных окон при клике вне их
+// Закрытие модальных окон при клике вне их (кроме авторизации)
 window.addEventListener('click', function(event) {
     const modals = document.querySelectorAll('.modal');
     modals.forEach(modal => {
-        if (event.target === modal) {
+        // Не закрываем окно авторизации при клике вне его
+        if (event.target === modal && modal.id !== 'login-modal') {
             modal.style.display = 'none';
         }
     });
 });
-
-
-
