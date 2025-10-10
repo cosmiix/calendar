@@ -90,6 +90,29 @@ function saveAuth() {
     }
 }
 
+// Выход из системы
+function logout() {
+    if (confirm('Вы уверены, что хотите выйти?')) {
+        // Очищаем сохраненные данные
+        localStorage.removeItem('calendarUser');
+        localStorage.removeItem('calendarUserRole');
+        
+        // Сбрасываем переменные
+        userRole = null;
+        currentUser = null;
+        isEditMode = false;
+        
+        // Показываем окно входа и скрываем основной интерфейс
+        document.getElementById('login-modal').style.display = 'flex';
+        document.querySelector('.container').style.display = 'none';
+        
+        // Сбрасываем форму входа
+        document.getElementById('login-password-input').value = '';
+        
+        console.log('✅ Пользователь вышел из системы');
+    }
+}
+
 // Загрузка данных из Firebase
 async function loadData() {
     if (!db) {
@@ -137,6 +160,9 @@ function setupEventListeners() {
     // Форма входа при запуске
     document.getElementById('login-form').addEventListener('submit', handleLogin);
 
+    // Кнопка выхода
+    document.getElementById('logout-btn').addEventListener('click', logout);
+
     // Навигация по месяцам
     document.getElementById('prev-month').addEventListener('click', () => {
         currentMonth.setMonth(currentMonth.getMonth() - 1);
@@ -161,7 +187,7 @@ function setupEventListeners() {
         if (isEditMode) {
             exitEditMode();
         } else {
-            enterEditMode(); // Убрана повторная авторизация
+            enterEditMode();
         }
     });
 
@@ -562,7 +588,7 @@ function showTimeModal() {
     if (scheduleData[selectedDay.dayKey]?.timeStart) {
         timeStartSelect.value = scheduleData[selectedDay.dayKey].timeStart;
     } else {
-        timeStartSelect.value = '09:00';
+        timeStartSelect.value = '';
     }
     
     // Заполняем варианты окончания работы в зависимости от дня недели
@@ -570,6 +596,14 @@ function showTimeModal() {
     const endTimes = endTimeOptions[dayOfWeek] || endTimeOptions[1];
     
     timeEndSelect.innerHTML = '';
+    
+    // Добавляем пустую опцию
+    const emptyOption = document.createElement('option');
+    emptyOption.value = '';
+    emptyOption.textContent = '-- Не выбрано --';
+    timeEndSelect.appendChild(emptyOption);
+    
+    // Добавляем варианты времени
     endTimes.forEach(time => {
         const option = document.createElement('option');
         option.value = time;
@@ -581,7 +615,7 @@ function showTimeModal() {
     if (scheduleData[selectedDay.dayKey]?.timeEnd) {
         timeEndSelect.value = scheduleData[selectedDay.dayKey].timeEnd;
     } else {
-        timeEndSelect.value = endTimes[0];
+        timeEndSelect.value = '';
     }
     
     modal.style.display = 'flex';
@@ -657,26 +691,49 @@ async function saveWorkTime() {
     const workTimeEnd = document.getElementById('work-time-end').value;
     
     try {
-        // Для Димы не меняем статус рабочего дня, только время
-        const updateData = {
-            timeStart: workTimeStart,
-            timeEnd: workTimeEnd,
-            date: selectedDay.dayKey,
-            updatedAt: new Date().toISOString()
-        };
-        
-        // Если день уже рабочий, сохраняем этот статус
-        if (scheduleData[selectedDay.dayKey]?.isWorkDay) {
-            updateData.isWorkDay = true;
+        // Если выбраны пустые значения - удаляем время
+        if (!workTimeStart || !workTimeEnd) {
+            const updateData = {
+                timeStart: '',
+                timeEnd: '',
+                date: selectedDay.dayKey,
+                updatedAt: new Date().toISOString()
+            };
+            
+            // Сохраняем текущий статус рабочего дня
+            if (scheduleData[selectedDay.dayKey]?.isWorkDay) {
+                updateData.isWorkDay = true;
+            }
+            
+            await db.collection('schedule').doc(selectedDay.dayKey).set(updateData, { merge: true });
+            
+            // Обновляем локальные данные
+            scheduleData[selectedDay.dayKey] = {
+                ...scheduleData[selectedDay.dayKey],
+                ...updateData
+            };
+        } else {
+            // Сохраняем выбранное время
+            const updateData = {
+                timeStart: workTimeStart,
+                timeEnd: workTimeEnd,
+                date: selectedDay.dayKey,
+                updatedAt: new Date().toISOString()
+            };
+            
+            // Сохраняем текущий статус рабочего дня
+            if (scheduleData[selectedDay.dayKey]?.isWorkDay) {
+                updateData.isWorkDay = true;
+            }
+            
+            await db.collection('schedule').doc(selectedDay.dayKey).set(updateData, { merge: true });
+            
+            // Обновляем локальные данные
+            scheduleData[selectedDay.dayKey] = {
+                ...scheduleData[selectedDay.dayKey],
+                ...updateData
+            };
         }
-        
-        await db.collection('schedule').doc(selectedDay.dayKey).set(updateData, { merge: true });
-        
-        // Обновляем локальные данные
-        scheduleData[selectedDay.dayKey] = {
-            ...scheduleData[selectedDay.dayKey],
-            ...updateData
-        };
         
         closeTimeModal();
         renderCalendar();
@@ -693,29 +750,14 @@ function enterEditMode() {
     isEditMode = true;
     document.body.classList.add('edit-mode', `role-${userRole}`);
     
-    // Обновляем текст уведомления в зависимости от роли
-    const notice = document.getElementById('edit-notice');
-    const description = document.getElementById('edit-mode-description');
-    
-    if (userRole === 'tanya') {
-        description.textContent = 'Нажимайте на дни для отметки рабочих дней';
-    } else if (userRole === 'dima') {
-        description.textContent = 'Нажимайте на дни для выбора времени работы';
-    }
-    
-    document.getElementById('edit-notice').style.display = 'block';
     document.getElementById('edit-toggle').textContent = 'Завершить редактирование';
     document.getElementById('edit-toggle').classList.remove('btn-primary');
     document.getElementById('edit-toggle').classList.add('btn-secondary');
-    
-    // Перепривязываем обработчик для кнопки сохранения
-    document.getElementById('save-changes').addEventListener('click', exitEditMode);
 }
 
 function exitEditMode() {
     isEditMode = false;
     document.body.classList.remove('edit-mode', 'role-tanya', 'role-dima');
-    document.getElementById('edit-notice').style.display = 'none';
     document.getElementById('edit-toggle').textContent = 'Edit';
     document.getElementById('edit-toggle').classList.remove('btn-secondary');
     document.getElementById('edit-toggle').classList.add('btn-primary');
