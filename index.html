@@ -44,14 +44,8 @@
             <div class="user-info">
                 <span id="current-user" style="margin-right: 10px; font-size: 0.9em;"></span>
                 <button id="edit-toggle" class="btn btn-primary btn-edit">Edit</button>
+                <button id="logout-btn" class="btn btn-outline btn-compact" title="Выйти">🚪</button>
             </div>
-        </div>
-
-        <!-- Уведомление о режиме редактирования -->
-        <div id="edit-notice" class="edit-notice" style="display: none;">
-            <strong>Режим редактирования</strong>
-            <p id="edit-mode-description">Нажимайте на дни для отметки рабочих дней</p>
-            <button id="save-changes" class="btn btn-secondary" style="margin-top: 10px;">Сохранить</button>
         </div>
 
         <!-- Основной контент в две колонки -->
@@ -162,6 +156,7 @@
             <div class="form-group">
                 <label class="form-label">Начало:</label>
                 <select class="form-select" id="work-time-start">
+                    <option value="">-- Не выбрано --</option>
                     <option value="07:30">07:30</option>
                     <option value="09:00">09:00</option>
                     <option value="12:00">12:00</option>
