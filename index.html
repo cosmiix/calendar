@@ -7,7 +7,32 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
+    <!-- Модальное окно авторизации при входе -->
+    <div id="login-modal" class="modal" style="display: flex;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Вход в систему</h3>
+            </div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label class="form-label">Выберите пользователя:</label>
+                    <select class="form-select" id="login-user-type">
+                        <option value="tanya">Таня</option>
+                        <option value="dima">Дима</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Пароль:</label>
+                    <input type="password" class="form-input" id="login-password-input" placeholder="Введите пароль" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Войти</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="container" style="display: none;">
         <!-- Панель управления -->
         <div class="nav">
             <div class="nav-group">
@@ -16,13 +41,16 @@
                 <button id="next-month" class="btn btn-outline btn-compact">→</button>
             </div>
             <div id="month-range" class="nav-title">Октябрь 2024</div>
-            <button id="edit-toggle" class="btn btn-primary btn-edit">Edit</button>
+            <div class="user-info">
+                <span id="current-user" style="margin-right: 10px; font-size: 0.9em;"></span>
+                <button id="edit-toggle" class="btn btn-primary btn-edit">Edit</button>
+            </div>
         </div>
 
         <!-- Уведомление о режиме редактирования -->
         <div id="edit-notice" class="edit-notice" style="display: none;">
             <strong>Режим редактирования</strong>
-            <p>Нажимайте на дни для отметки рабочих дней</p>
+            <p id="edit-mode-description">Нажимайте на дни для отметки рабочих дней</p>
             <button id="save-changes" class="btn btn-secondary" style="margin-top: 10px;">Сохранить</button>
         </div>
 
@@ -45,7 +73,7 @@
                 </div>
             </div>
 
-            <!-- Правая колонка - заметки и статистика (ПОМЕНЯЛ МЕСТАМИ) -->
+            <!-- Правая колонка - заметки и статистика -->
             <div class="sidebar-column">
                 <!-- Заметки дня -->
                 <div class="day-notes-section">
@@ -153,33 +181,6 @@
         </div>
     </div>
 
-    <!-- Модальное окно авторизации -->
-    <div id="auth-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Выберите пользователя</h3>
-                <button class="close-btn" onclick="closeAuthModal()">×</button>
-            </div>
-            <form id="auth-form">
-                <div class="form-group">
-                    <label class="form-label"></label>
-                    <select class="form-select" id="user-type">
-                        <option value="tanya">Таня</option>
-                        <option value="dima">Дима</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Пароль:</label>
-                    <input type="password" class="form-input" id="password-input" placeholder="Введите пароль" required>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn btn-outline" onclick="closeAuthModal()">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Войти</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Подключаем Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
@@ -188,6 +189,3 @@
     <script src="app.js"></script>
 </body>
 </html>
-
-
-
