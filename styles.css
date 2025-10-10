@@ -43,7 +43,7 @@ body {
 .user-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin-left: auto; /* Прижимаем к правому краю */
 }
 
@@ -63,8 +63,8 @@ body {
 }
 
 .btn-compact {
-  padding: 6px 12px;
-  font-size: 0.85em;
+  padding: 6px 10px;
+  font-size: 0.8em;
 }
 
 .btn-edit {
@@ -505,17 +505,6 @@ body {
 }
 
 /* Режим редактирования */
-.edit-notice {
-  border-radius: 6px;
-  padding: 12px;
-  margin: 8px 0;
-  text-align: center;
-  font-size: 0.9em;
-  background: rgba(74, 111, 165, 0.1);
-  border: 1px solid var(--primary-color);
-  color: var(--primary-color);
-}
-
 .edit-mode .month-day:not(.other-month) {
   cursor: pointer;
 }
@@ -682,8 +671,9 @@ body {
   .nav {
     flex-wrap: wrap;
     gap: 8px;
-    justify-content: space-between; /* Изменено для правильного позиционирования */
+    justify-content: space-between;
     padding: 10px;
+    position: relative;
   }
   
   .nav-title {
@@ -695,9 +685,12 @@ body {
   }
   
   .user-info {
-    margin-left: 0; /* Сбрасываем для мобильной версии */
-    justify-content: flex-end; /* Выравниваем по правому краю */
-    width: 100%;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    margin-left: 0;
+    justify-content: flex-end;
+    width: auto;
   }
   
   .month-calendar {
@@ -720,8 +713,13 @@ body {
   }
   
   .btn {
-    padding: 6px 12px;
-    font-size: 0.85em;
+    padding: 6px 10px;
+    font-size: 0.8em;
+  }
+  
+  .btn-compact {
+    padding: 5px 8px;
+    font-size: 0.75em;
   }
   
   .calendar-section {
@@ -773,15 +771,20 @@ body {
     flex-direction: column;
     align-items: stretch;
     gap: 6px;
+    padding: 8px;
   }
   
   .nav-group {
     justify-content: center;
+    order: 2;
+    margin-top: 8px;
   }
   
   .user-info {
-    justify-content: center; /* На очень маленьких экранах центрируем */
-    margin-top: 8px;
+    position: static;
+    justify-content: center;
+    order: 1;
+    margin-top: 0;
   }
   
   .month-calendar {
@@ -845,8 +848,8 @@ body {
   }
   
   .btn {
-    padding: 5px 10px;
-    font-size: 0.8em;
+    padding: 5px 8px;
+    font-size: 0.75em;
   }
   
   .stats-section h2, .day-notes-section h2 {
