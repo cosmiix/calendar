@@ -3,7 +3,7 @@
   --primary-color: #4a6fa5;
   --secondary-color: #6b8cbc;
   --accent-color: #ff6b6b;
-  --work-day-color: #e6bbbbd7;
+  --work-day-color: #4a6fa5;
   --danger-color: #e74c3c;
   --background-color: #f8f9fa;
   --card-color: #ffffff;
@@ -11,7 +11,7 @@
   --text-secondary: #7f8c8d;
   --border-color: #e1e8ed;
   --today-color: #e8f4fd;
-  --weekend-color: #ffffff;
+  --weekend-color: #f8f9fa;
   --note-color: #fff9e6;
   --work-time-color: #e74c3c;
   --reply-color: #e8f4fd;
@@ -875,3 +875,4 @@ body {
     font-size: 0.5em;
   }
 }
+
