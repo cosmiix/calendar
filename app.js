@@ -25,7 +25,7 @@ try {
 }
 
 // Глобальные переменные
-let currentMonth = new Date();
+let currentMonth = new Date(); // Исправлено: сразу текущая дата
 let isEditMode = false;
 let userRole = null;
 let currentUser = null;
@@ -33,6 +33,10 @@ let selectedDay = null;
 let selectedNote = null;
 let scheduleData = {};
 let notesData = {};
+
+// Переменные для свайпов
+let touchStartX = 0;
+let touchEndX = 0;
 
 const monthNames = [
     "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
@@ -54,7 +58,41 @@ const endTimeOptions = {
 document.addEventListener('DOMContentLoaded', function() {
     checkSavedAuth();
     setupEventListeners();
+    setupSwipeHandlers(); // Добавляем обработчики свайпов
 });
+
+// Настройка обработчиков свайпов
+function setupSwipeHandlers() {
+    const calendarSection = document.querySelector('.calendar-section');
+    
+    if (calendarSection) {
+        calendarSection.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        }, false);
+
+        calendarSection.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, false);
+    }
+}
+
+// Обработка свайпов
+function handleSwipe() {
+    const swipeThreshold = 50; // Минимальная дистанция свайпа
+    
+    if (touchEndX < touchStartX - swipeThreshold) {
+        // Свайп влево - следующий месяц
+        currentMonth.setMonth(currentMonth.getMonth() + 1);
+        renderCalendar();
+        updateStats();
+    } else if (touchEndX > touchStartX + swipeThreshold) {
+        // Свайп вправо - предыдущий месяц
+        currentMonth.setMonth(currentMonth.getMonth() - 1);
+        renderCalendar();
+        updateStats();
+    }
+}
 
 // Проверка сохраненной авторизации
 function checkSavedAuth() {
@@ -261,7 +299,7 @@ function renderCalendar() {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
     
-    // Обновляем заголовок
+    // Обновляем заголовок - исправлено: всегда текущий месяц и год
     const monthRange = document.getElementById('month-range');
     if (monthRange) {
         monthRange.textContent = `${monthNames[month]} ${year}`;
