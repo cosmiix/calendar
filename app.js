@@ -788,7 +788,7 @@ function enterEditMode() {
     isEditMode = true;
     document.body.classList.add('edit-mode', `role-${userRole}`);
     
-    document.getElementById('edit-toggle').textContent = 'Завершить редактирование';
+    document.getElementById('edit-toggle').textContent = 'Сохранить';
     document.getElementById('edit-toggle').classList.remove('btn-primary');
     document.getElementById('edit-toggle').classList.add('btn-secondary');
 }
@@ -796,7 +796,7 @@ function enterEditMode() {
 function exitEditMode() {
     isEditMode = false;
     document.body.classList.remove('edit-mode', 'role-tanya', 'role-dima');
-    document.getElementById('edit-toggle').textContent = 'Edit';
+    document.getElementById('edit-toggle').textContent = '✏️';
     document.getElementById('edit-toggle').classList.remove('btn-secondary');
     document.getElementById('edit-toggle').classList.add('btn-primary');
 }
@@ -861,3 +861,4 @@ window.addEventListener('click', function(event) {
         }
     });
 });
+
