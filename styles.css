@@ -33,6 +33,7 @@ body {
   min-height: 100vh;
   color: var(--text-primary);
   line-height: 1.6;
+  touch-action: pan-y; /* Разрешаем вертикальные свайпы */
 }
 
 .container {
@@ -194,6 +195,9 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   width: 100%;
   overflow: hidden;
+  /* Для свайпов */
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .weekdays-header {
@@ -294,7 +298,7 @@ body {
   font-weight: 600;
   background: #2c3e50;
   color: white;
-  padding: 2px 4px;
+  padding: 1px 3px;
   border-radius: 3px;
   margin-top: 1px;
   display: none;
@@ -707,9 +711,9 @@ body {
   }
   
   .month-day-time {
-    font-size: 0.6em;
+    font-size: 0.55em; /* Уменьшен размер шрифта для времени */
     display: block !important;
-    padding: 1px 3px;
+    padding: 1px 2px; /* Уменьшены отступы */
   }
   
   .btn {
@@ -768,23 +772,25 @@ body {
   }
   
   .nav {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
+    flex-direction: row; /* Изменено на row для лучшего позиционирования */
+    align-items: center;
+    gap: 8px;
     padding: 8px;
+    position: relative;
   }
   
   .nav-group {
-    justify-content: center;
-    order: 2;
-    margin-top: 8px;
+    justify-content: flex-start;
+    order: 1;
+    flex: 1;
   }
   
   .user-info {
     position: static;
-    justify-content: center;
-    order: 1;
+    justify-content: flex-end;
+    order: 2;
     margin-top: 0;
+    width: auto;
   }
   
   .month-calendar {
@@ -800,7 +806,8 @@ body {
   }
   
   .month-day-time {
-    font-size: 0.55em;
+    font-size: 0.5em; /* Еще меньше для очень маленьких экранов */
+    padding: 0 1px;
   }
   
   .modal-content {
@@ -844,7 +851,7 @@ body {
   }
   
   .month-day-time {
-    font-size: 0.5em;
+    font-size: 0.45em; /* Минимальный размер */
   }
   
   .btn {
@@ -858,6 +865,10 @@ body {
   
   .stat-value {
     font-size: 1.2em;
+  }
+  
+  .user-info {
+    gap: 4px;
   }
 }
 
@@ -875,4 +886,3 @@ body {
     font-size: 0.5em;
   }
 }
-
