@@ -373,6 +373,7 @@ body {
   box-shadow: 0 2px 6px rgba(0,0,0,0.06);
   order: 2;
   transition: background-color 0.3s ease;
+  margin-top: 28px;
   }
 /*
 .stats-section h2 {
@@ -750,6 +751,7 @@ body {
   
   .stats-section {
     order: 2;
+    margin-top: 0;
   }
   
   .day-notes-list {
@@ -828,6 +830,7 @@ body {
   
   .stats-section, .day-notes-section {
     padding: 15px;
+    margin-top: 0;
   }
   
   .weekdays-header {
@@ -925,6 +928,7 @@ body {
   
   .stats-section, .day-notes-section {
     padding: 12px;
+    margin-top: 0;
   }
   
   .day-notes-list {
@@ -956,6 +960,7 @@ body {
   
   .stats-section h2, .day-notes-section h2 {
     font-size: 1em;
+    margin-top: 0;
   }
   
   .stat-value {
@@ -980,12 +985,8 @@ body {
   .month-day-time {
     font-size: 0.5em;
   }
-  /* Десктопная версия */
-@media (min-width: 1025px) {
-  .stats-section {
-    margin-top: 2.6em !important;
-  }
 }
+
 
 
 
