@@ -308,6 +308,7 @@ body {
 }
 
 .month-day.has-work-time .month-day-time {
+  font-size: 0.7em;
   display: block;
 }
 
@@ -940,4 +941,5 @@ body {
     font-size: 0.5em;
   }
 }
+
 
