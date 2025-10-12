@@ -1,124 +1,119 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Календарь</title>
 
-  <!-- Tailwind CSS -->
+  <!-- Твой старый стиль -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Tailwind (только утилитарные классы, не заменяет твой CSS) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Настройка цветовой темы Tailwind -->
+  <!-- Настройка Tailwind: только базовые цвета -->
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            primary: '#6C63FF',
-            secondary: '#F3F4F6',
+            primary: '#4a6fa5',
+            accent: '#ff6b6b',
           },
         },
       },
     };
   </script>
-
-  <!-- Шрифт -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #f9fafb;
-      color: #1f2937;
-    }
-    [data-theme="dark"] {
-      background-color: #111827;
-      color: #e5e7eb;
-    }
-  </style>
 </head>
 
-<body class="min-h-screen flex flex-col items-center justify-center">
+<body class="transition-colors duration-300">
 
-  <!-- Модальное окно входа -->
-  <div id="login-modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 w-full max-w-sm">
-      <h2 class="text-2xl font-semibold text-center mb-6 text-gray-800 dark:text-gray-100">Вход в систему</h2>
-      <form id="login-form" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium mb-1">Пользователь</label>
-          <select id="login-user-type" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary outline-none">
+  <!-- Модалка авторизации -->
+  <div id="login-modal" class="modal flex items-center justify-center">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Вход в систему</h3>
+      </div>
+      <form id="login-form" class="space-y-3">
+        <div class="form-group">
+          <label class="form-label">Пользователь</label>
+          <select id="login-user-type" class="form-select">
             <option value="tanya">Таня</option>
             <option value="dima">Дима</option>
           </select>
         </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Пароль</label>
-          <input id="login-password-input" type="password" placeholder="Введите пароль" required
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary outline-none" />
+        <div class="form-group">
+          <label class="form-label">Пароль</label>
+          <input type="password" id="login-password-input" class="form-input" placeholder="Введите пароль" required>
         </div>
-        <button type="submit" class="w-full bg-primary hover:bg-indigo-600 text-white py-2 rounded-lg font-medium transition">
-          Войти
-        </button>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary w-full justify-center">Войти</button>
+        </div>
       </form>
     </div>
   </div>
 
-  <!-- Основной контейнер -->
-  <div class="container mx-auto p-4 hidden">
+  <!-- Контейнер -->
+  <div class="container hidden">
     <!-- Навигация -->
-    <div class="flex items-center justify-between bg-white dark:bg-gray-900 rounded-xl shadow-md p-4 mb-6">
-      <div class="flex items-center gap-2">
-        <button id="prev-month" class="px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200">←</button>
-        <button id="current-month" class="px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200">Сегодня</button>
-        <button id="next-month" class="px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200">→</button>
+    <div class="nav">
+      <div class="nav-group">
+        <button id="prev-month" class="btn btn-outline btn-compact">←</button>
+        <button id="current-month" class="btn btn-outline btn-compact">Сегодня</button>
+        <button id="next-month" class="btn btn-outline btn-compact">→</button>
       </div>
 
-      <div id="month-range" class="text-lg font-semibold text-gray-800 dark:text-gray-200">Октябрь 2025</div>
+      <div id="month-range" class="nav-title">Октябрь 2025</div>
 
-      <div class="flex items-center gap-2">
-        <button id="theme-toggle" class="px-3 py-2 text-xl rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">🌙</button>
-        <span id="current-user" class="text-sm text-gray-600 dark:text-gray-300"></span>
-        <button id="edit-toggle" class="px-3 py-2 text-lg rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">✏️</button>
-        <button id="logout-btn" class="px-3 py-2 text-lg rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">🚪</button>
+      <div class="user-info">
+        <button id="theme-toggle" class="btn btn-outline btn-compact" title="Сменить тему">🌙</button>
+        <span id="current-user" class="text-sm mr-2"></span>
+        <button id="edit-toggle" class="btn btn-outline btn-compact" title="Редактировать">✏️</button>
+        <button id="logout-btn" class="btn btn-outline btn-compact" title="Выйти">🚪</button>
       </div>
     </div>
 
     <!-- Контент -->
-    <div class="grid lg:grid-cols-3 gap-6">
-      <!-- Календарь -->
-      <div class="lg:col-span-2 bg-white dark:bg-gray-900 rounded-xl shadow-md p-6">
-        <div class="grid grid-cols-7 text-center font-medium text-gray-500 mb-2">
-          <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+    <div class="main-content mt-4">
+      <!-- Левая часть: календарь -->
+      <div class="calendar-column">
+        <div class="calendar-section">
+          <div class="weekdays-header">
+            <div class="weekday">Пн</div>
+            <div class="weekday">Вт</div>
+            <div class="weekday">Ср</div>
+            <div class="weekday">Чт</div>
+            <div class="weekday">Пт</div>
+            <div class="weekday">Сб</div>
+            <div class="weekday">Вс</div>
+          </div>
+          <div id="monthCalendar" class="month-calendar"></div>
         </div>
-        <div id="monthCalendar" class="grid grid-cols-7 gap-2"></div>
       </div>
 
-      <!-- Правая панель -->
-      <div class="space-y-6">
-        <!-- Заметки -->
-        <div class="bg-white dark:bg-gray-900 rounded-xl shadow-md p-6">
-          <h2 class="text-xl font-semibold mb-3">Заметки</h2>
-          <div id="selected-day-info" class="text-gray-500 text-sm mb-3">Выберите день для просмотра</div>
-          <div id="day-notes-list" class="space-y-3 max-h-64 overflow-y-auto text-sm">
-            <div class="text-gray-400 italic">Заметок нет</div>
+      <!-- Правая часть: заметки и статистика -->
+      <div class="sidebar-column">
+        <div class="day-notes-section">
+          <h2>Заметки</h2>
+          <div id="selected-day-info" class="selected-day-info">Выберите день для просмотра</div>
+          <div id="day-notes-list" class="day-notes-list">
+            <div class="no-notes">Заметок нет</div>
           </div>
-          <button id="add-day-note"
-            class="mt-4 w-full bg-primary hover:bg-indigo-600 text-white py-2 rounded-lg font-medium transition">
-            Добавить заметку
-          </button>
+          <div class="day-notes-actions">
+            <button id="add-day-note" class="btn btn-primary w-full justify-center">Добавить</button>
+          </div>
         </div>
 
-        <!-- Статистика -->
-        <div class="bg-white dark:bg-gray-900 rounded-xl shadow-md p-6">
-          <h2 class="text-xl font-semibold mb-4">Статистика</h2>
-          <div class="grid grid-cols-2 gap-4 text-center">
-            <div class="p-4 rounded-lg bg-secondary dark:bg-gray-800">
-              <div id="total-work-days" class="text-2xl font-bold text-primary">0</div>
-              <div class="text-sm text-gray-600 dark:text-gray-400">Рабочих дней</div>
+        <div class="stats-section">
+          <h2>Статистика месяца</h2>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div id="total-work-days" class="stat-value">0</div>
+              <div class="stat-label">Рабочих дней</div>
             </div>
-            <div class="p-4 rounded-lg bg-secondary dark:bg-gray-800">
-              <div id="next-workday" class="text-lg font-semibold text-primary">-</div>
-              <div class="text-sm text-gray-600 dark:text-gray-400">Ближайший рабочий день</div>
+            <div class="stat-card next-workday">
+              <div id="next-workday" class="stat-value">-</div>
+              <div class="stat-label">Ближайший рабочий день</div>
             </div>
           </div>
         </div>
@@ -126,65 +121,72 @@
     </div>
   </div>
 
-  <!-- Модалки -->
-  <div id="add-note-modal" class="hidden fixed inset-0 bg-black bg-opacity-40 z-50 items-center justify-center">
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg w-full max-w-md">
-      <div class="flex justify-between items-center mb-4">
-        <h3 id="add-note-title" class="text-xl font-semibold">Добавить заметку</h3>
-        <button onclick="closeAddNoteModal()" class="text-2xl leading-none">×</button>
+  <!-- Модальные окна -->
+  <!-- Добавление заметки -->
+  <div id="add-note-modal" class="modal flex items-center justify-center">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="add-note-title" class="modal-title">Добавить заметку</h3>
+        <button class="close-btn" onclick="closeAddNoteModal()">×</button>
       </div>
-      <form id="add-note-form" class="space-y-4">
-        <textarea id="note-text" required placeholder="Введите текст..." class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary"></textarea>
-        <div class="flex justify-end gap-2">
-          <button type="button" onclick="closeAddNoteModal()" class="px-4 py-2 rounded-lg border">Отмена</button>
-          <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg">Сохранить</button>
+      <form id="add-note-form">
+        <div class="form-group">
+          <label class="form-label">Текст</label>
+          <textarea id="note-text" class="form-textarea" placeholder="Введите текст..." required></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-outline" onclick="closeAddNoteModal()">Отмена</button>
+          <button type="submit" class="btn btn-primary">Сохранить</button>
         </div>
       </form>
     </div>
   </div>
 
-  <div id="reply-note-modal" class="hidden fixed inset-0 bg-black bg-opacity-40 z-50 items-center justify-center">
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg w-full max-w-md">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-xl font-semibold">Ответить</h3>
-        <button onclick="closeReplyModal()" class="text-2xl leading-none">×</button>
+  <!-- Ответ на заметку -->
+  <div id="reply-note-modal" class="modal flex items-center justify-center">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Ответить</h3>
+        <button class="close-btn" onclick="closeReplyModal()">×</button>
       </div>
-      <form id="reply-note-form" class="space-y-4">
-        <div id="original-note-content" class="text-sm text-gray-500"></div>
-        <textarea id="reply-text" required placeholder="Введите ответ..." class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary"></textarea>
-        <div class="flex justify-end gap-2">
-          <button type="button" onclick="closeReplyModal()" class="px-4 py-2 rounded-lg border">Отмена</button>
-          <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg">Отправить</button>
+      <form id="reply-note-form">
+        <div id="original-note-content" class="original-note"></div>
+        <div class="form-group">
+          <label class="form-label">Ваш ответ</label>
+          <textarea id="reply-text" class="form-textarea" placeholder="Введите ответ..." required></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-outline" onclick="closeReplyModal()">Отмена</button>
+          <button type="submit" class="btn btn-primary">Отправить</button>
         </div>
       </form>
     </div>
   </div>
 
-  <div id="time-modal" class="hidden fixed inset-0 bg-black bg-opacity-40 z-50 items-center justify-center">
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg w-full max-w-md">
-      <div class="flex justify-between items-center mb-4">
-        <h3 id="time-modal-title" class="text-xl font-semibold">Выберите время</h3>
-        <button onclick="closeTimeModal()" class="text-2xl leading-none">×</button>
+  <!-- Выбор времени -->
+  <div id="time-modal" class="modal flex items-center justify-center">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="time-modal-title" class="modal-title">Выберите время</h3>
+        <button class="close-btn" onclick="closeTimeModal()">×</button>
       </div>
-      <div class="space-y-4">
-        <div>
-          <label class="block mb-1">Начало:</label>
-          <select id="work-time-start" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary">
-            <option value="">-- Не выбрано --</option>
-            <option value="07:30">07:30</option>
-            <option value="09:00">09:00</option>
-            <option value="12:00">12:00</option>
-            <option value="13:15">13:15</option>
-          </select>
-        </div>
-        <div>
-          <label class="block mb-1">Окончание:</label>
-          <select id="work-time-end" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary"></select>
-        </div>
-        <div class="flex justify-end gap-2">
-          <button onclick="closeTimeModal()" class="px-4 py-2 rounded-lg border">Отмена</button>
-          <button onclick="saveWorkTime()" class="px-4 py-2 bg-primary text-white rounded-lg">Сохранить</button>
-        </div>
+      <div class="form-group">
+        <label class="form-label">Начало:</label>
+        <select id="work-time-start" class="form-select">
+          <option value="">-- Не выбрано --</option>
+          <option value="07:30">07:30</option>
+          <option value="09:00">09:00</option>
+          <option value="12:00">12:00</option>
+          <option value="13:15">13:15</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Окончание:</label>
+        <select id="work-time-end" class="form-select"></select>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" onclick="closeTimeModal()">Отмена</button>
+        <button type="button" class="btn btn-primary" onclick="saveWorkTime()">Сохранить</button>
       </div>
     </div>
   </div>
@@ -193,7 +195,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
-  <!-- JS -->
+  <!-- Основной скрипт -->
   <script src="app.js"></script>
 </body>
-</html>
+  </html>
