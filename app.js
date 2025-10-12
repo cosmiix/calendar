@@ -34,6 +34,8 @@ let selectedNote = null;
 let scheduleData = {};
 let notesData = {};
 let currentTheme = 'light';
+let scheduleUnsubscribe = null;
+let notesUnsubscribe = null;
 
 // Переменные для свайпов
 let touchStartX = 0;
@@ -127,6 +129,14 @@ function saveAuth() {
 // Выход из системы
 function logout() {
     if (confirm('Вы уверены, что хотите выйти?')) {
+       if (scheduleUnsubscribe) {
+            scheduleUnsubscribe();
+            scheduleUnsubscribe = null;
+        }
+        if (notesUnsubscribe) {
+            notesUnsubscribe();
+            notesUnsubscribe = null;
+        }
         localStorage.removeItem('calendarUser');
         localStorage.removeItem('calendarUserRole');
         
@@ -144,21 +154,37 @@ function logout() {
 
 // Загрузка данных из Firebase
 async function loadData() {
+// Загрузка данных из Firebase с real-time listeners
+function loadData() {
     if (!db) {
         console.warn('Firebase не инициализирован');
         return;
     }
 
-    try {
-        // Загружаем расписание
-        const scheduleSnapshot = await db.collection('schedule').get();
+    // Отписываемся от предыдущих listeners если они есть
+    if (scheduleUnsubscribe) {
+        scheduleUnsubscribe();
+    }
+    if (notesUnsubscribe) {
+        notesUnsubscribe();
+    }
+
+    // Real-time listener для расписания
+    scheduleUnsubscribe = db.collection('schedule').onSnapshot((scheduleSnapshot) => {
         scheduleData = {};
         scheduleSnapshot.forEach(doc => {
             scheduleData[doc.id] = doc.data();
         });
+        
+        console.log('✅ Расписание обновлено в реальном времени');
+        renderCalendar();
+        updateStats();
+    }, (error) => {
+        console.error('❌ Ошибка real-time расписания:', error);
+    });
 
-        // Загружаем заметки и сортируем по дате создания
-        const notesSnapshot = await db.collection('notes').orderBy('timestamp', 'desc').get();
+    // Real-time listener для заметок
+    notesUnsubscribe = db.collection('notes').orderBy('timestamp', 'desc').onSnapshot((notesSnapshot) => {
         notesData = {};
         notesSnapshot.forEach(doc => {
             const noteData = doc.data();
@@ -173,16 +199,17 @@ async function loadData() {
                 ...noteData
             });
         });
-
-        console.log('✅ Данные загружены из Firebase');
         
+        console.log('✅ Заметки обновлены в реальном времени');
         renderCalendar();
-        updateStats();
-    } catch (error) {
-        console.error('❌ Ошибка загрузки данных:', error);
-    }
+        
+        if (selectedDay) {
+            showDayNotes(selectedDay.date, selectedDay.dayKey);
+        }
+    }, (error) => {
+        console.error('❌ Ошибка real-time заметок:', error);
+    });
 }
-
 // Настройка обработчиков событий
 function setupEventListeners() {
     // Форма входа при запуске
@@ -300,7 +327,7 @@ async function handleLogin(e) {
         document.querySelector('.container').style.display = 'block';
         document.getElementById('current-user').textContent = currentUser;
         
-        await loadData();
+        loadData();
         updateStats();
         
         console.log('✅ Пользователь авторизован:', currentUser);
@@ -494,7 +521,7 @@ async function deleteNote(noteId) {
     try {
         await db.collection('notes').doc(noteId).delete();
         
-        await loadData();
+        loadData();
         
         if (selectedDay) {
             showDayNotes(selectedDay.date, selectedDay.dayKey);
@@ -559,7 +586,7 @@ async function handleReplyNote(e) {
             replies: replies
         });
         
-        await loadData();
+        loadData();
         
         if (selectedDay) {
             showDayNotes(selectedDay.date, selectedDay.dayKey);
@@ -708,7 +735,7 @@ async function handleAddNote(e) {
         
         await db.collection('notes').add(noteData);
         
-        await loadData();
+        loadData();
         
         closeAddNoteModal();
         
@@ -886,3 +913,4 @@ window.addEventListener('click', function(event) {
         }
     });
 });
+
