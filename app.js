@@ -345,7 +345,7 @@ function renderCalendar() {
     }
 
     // Дни следующего месяца
-    const totalCells = 42;
+    const totalCells = 35;
     const existingCells = firstDayOfWeek + lastDay.getDate();
     for (let i = 1; i <= totalCells - existingCells; i++) {
         const nextMonthDay = new Date(year, month + 1, i);
@@ -851,4 +851,5 @@ window.addEventListener('click', function(event) {
         }
     });
 });
+
 
