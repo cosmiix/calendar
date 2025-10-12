@@ -76,22 +76,26 @@
                     <button id="add-day-note" class="btn btn-primary">Добавить</button>
                 </div>
             </div>
-
-            <!-- Статистика -->
-            <div class="stats-section">
-                    <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value" id="total-work-days">0</div>
-                        <div class="stat-label">Рабочих дней</div>
-                    </div>
-                    <div class="stat-card next-workday">
-                        <div class="stat-value" id="next-workday">-</div>
-                        <div class="stat-label">Ближайший рабочий день</div>
-                    </div>
-                </div>
-            </div>
+<!-- Статистика -->
+<div class="stats-section">
+  <div class="stats-grid">
+    <div class="stat-card combined-stats">
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-value" id="total-work-days">0</div>
+          <div class="stat-label">Рабочих дней</div>
         </div>
+        <div class="stat-item">
+          <div class="stat-value" id="total-work-hours">0</div>
+          <div class="stat-label" id="work-hours-label">Часов</div>
+        </div>
+      </div>
     </div>
+    <div class="stat-card next-workday">
+      <div class="stat-value" id="next-workday">-</div>
+      <div class="stat-label">Ближайший рабочий день</div>
+    </div>
+  </div>
 </div>
 
 <!-- Модальные окна -->
@@ -175,5 +179,3 @@
 <!-- Основной скрипт -->
 <script src="app.js"></script>
 </body></html>
-
-
