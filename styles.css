@@ -10,11 +10,12 @@
   --text-primary: #2c3e50;
   --text-secondary: #7f8c8d;
   --border-color: #e1e8ed;
-  --today-color: #e8f4fd;
+  --today-color: #9bf3b8;
   --weekend-color: #f8f9fa;
   --note-color: #fff9e6;
   --work-time-color: #000000;
   --reply-color: #e8f4fd;
+  --today-border-color: #27ae60;
 }
 
 /* Темная тема */
@@ -29,11 +30,12 @@
   --text-primary: #e0e0e0;
   --text-secondary: #a0a0a0;
   --border-color: #404040;
-  --today-color: #2d4a6d;
+  --today-color: #1e3a2e;
   --weekend-color: #252525;
   --note-color: #3d3d2d;
   --work-time-color: #ffffff;
   --reply-color: #2d4a6d;
+  --today-border-color: #2ecc71;
 }
 
 * {
@@ -284,9 +286,10 @@ body {
 }
 
 .month-day.today {
-  border: 2px solid var(--primary-color);
-  background: var(--today-color);
+  border: 2px solid var(--today-border-color); /* ← Зеленая рамка */
+  background: var(--today-color); /* ← Светло-зеленый фон */
   font-weight: 600;
+  position: relative;
 }
 
 .month-day.work-day {
@@ -294,6 +297,12 @@ body {
   color: white;
   font-weight: 600;
   border-color: var(--work-day-color);
+}
+
+.month-day.today.work-day {
+  background: var(--work-day-color); /* Сохраняем синий фон рабочего дня */
+  border: 2px solid var(--today-border-color) !important; /* Но зеленая рамка */
+  box-shadow: 0 0 5px rgba(39, 174, 96, 0.5); /* Зеленое свечение */
 }
 
 .month-day.has-notes::after {
@@ -941,5 +950,4 @@ body {
     font-size: 0.5em;
   }
 }
-
 
