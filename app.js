@@ -385,16 +385,10 @@ function createDayElement(date, isOtherMonth) {
     dayElement.appendChild(dayNumber);
 
     // Время работы (если есть)
-    if (hasWorkTime) {
+if (hasWorkTime) {
   const timeElement = document.createElement('div');
   timeElement.className = 'month-day-time';
-  
-  // Форматируем время: убираем нули, заменяем тире на перенос строки
-  const formatTime = (timeStr) => timeStr.replace(/^0/, '');
-  const startFormatted = formatTime(workTimeStart);
-  const endFormatted = formatTime(workTimeEnd);
-  
-  timeElement.textContent = `${startFormatted}\n${endFormatted}`; // ← НОВЫЙ ФОРМАТ
+  timeElement.textContent = `${workTimeStart}\n${workTimeEnd}`;
   dayElement.appendChild(timeElement);
 }
 
@@ -857,3 +851,4 @@ window.addEventListener('click', function(event) {
         }
     });
 });
+
