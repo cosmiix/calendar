@@ -13,8 +13,27 @@
   --today-color: #e8f4fd;
   --weekend-color: #f8f9fa;
   --note-color: #fff9e6;
-  --work-time-color: #e74c3c;
+  --work-time-color: #000000;
   --reply-color: #e8f4fd;
+}
+
+/* Темная тема */
+[data-theme="dark"] {
+  --primary-color: #5b8cda;
+  --secondary-color: #7ba6e0;
+  --accent-color: #ff7b7b;
+  --work-day-color: #5b8cda;
+  --danger-color: #ff6b6b;
+  --background-color: #1a1a1a;
+  --card-color: #2d2d2d;
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0a0;
+  --border-color: #404040;
+  --today-color: #2d4a6d;
+  --weekend-color: #252525;
+  --note-color: #3d3d2d;
+  --work-time-color: #ffffff;
+  --reply-color: #2d4a6d;
 }
 
 * {
@@ -34,6 +53,7 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   touch-action: pan-y; /* Разрешаем вертикальные свайпы */
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .container {
@@ -61,6 +81,8 @@ body {
   align-items: center;
   gap: 6px;
   white-space: nowrap;
+  background: var(--primary-color);
+  color: white;
 }
 
 .btn-compact {
@@ -148,6 +170,7 @@ body {
   padding: 12px 15px;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  transition: background-color 0.3s ease;
 }
 
 .nav-group {
@@ -198,6 +221,7 @@ body {
   /* Для свайпов */
   user-select: none;
   -webkit-user-select: none;
+  transition: background-color 0.3s ease;
 }
 
 .weekdays-header {
@@ -250,7 +274,7 @@ body {
 
 .month-day.other-month {
   opacity: 0.3;
-  background: #f8f9fa;
+  background: var(--background-color);
   color: var(--text-secondary);
 }
 
@@ -296,19 +320,39 @@ body {
 .month-day-time {
   font-size: 0.65em;
   font-weight: 600;
-  background: #2c3e50;
-  color: white;
-  padding: 1px 3px;
-  border-radius: 3px;
+  color: var(--work-time-color);
+  padding: 0;
   margin-top: 1px;
   display: none;
   line-height: 1.1;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  border: 1px solid #1a2530;
+  white-space: normal; /* ← меняем на normal для двух строк */
   font-family: 'Courier New', monospace;
+  text-align: center; /* ← выравнивание по центру */
+  word-break: keep-all; /* ← предотвращаем разрыв внутри времени */
+}
+.month-day.work-day.has-work-time .month-day-time {
+  color: rgba(255, 255, 255, 0.9);
+}
+/* Для мобильных устройств - улучшенное отображение времени */
+@media (max-width: 768px) {
+  .month-day-time {
+    font-size: 0.5em; /* ← уменьшаем шрифт еще */
+    font-weight: 500;
+    background: transparent !important;
+    border: none !important;
+    color: var(--work-time-color);
+    white-space: normal; /* ← две строки */
+    line-height: 1; /* ← плотнее межстрочное расстояние */
+    text-align: center; /* ← выравнивание по центру */
+    padding: 0 1px; /* ← небольшие отступы по бокам */
+  }
+  
+  .month-day.work-day.has-work-time .month-day-time {
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
 }
 
 /* Статистика */
@@ -318,6 +362,7 @@ body {
   padding: 20px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.06);
   order: 2;
+  transition: background-color 0.3s ease;
 }
 
 .stats-section h2 {
@@ -342,6 +387,7 @@ body {
   border-radius: 8px;
   text-align: center;
   border-left: 4px solid var(--primary-color);
+  transition: background-color 0.3s ease;
 }
 
 .stat-card.next-workday {
@@ -372,6 +418,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 400px;
+  transition: background-color 0.3s ease;
 }
 
 .day-notes-section h2 {
@@ -393,6 +440,7 @@ body {
   border-radius: 6px;
   text-align: center;
   border-left: 3px solid var(--primary-color);
+  transition: background-color 0.3s ease;
 }
 
 .day-notes-list {
@@ -410,6 +458,7 @@ body {
   margin-bottom: 10px;
   border-left: 3px solid var(--accent-color);
   position: relative;
+  transition: background-color 0.3s ease;
 }
 
 .day-note-meta {
@@ -452,6 +501,7 @@ body {
   border-radius: 4px;
   margin-top: 8px;
   border-left: 2px solid var(--primary-color);
+  transition: background-color 0.3s ease;
 }
 
 .reply-meta {
@@ -484,6 +534,7 @@ body {
   border-radius: 4px;
   margin-bottom: 6px;
   border-left: 2px solid var(--secondary-color);
+  transition: background-color 0.3s ease;
 }
 
 .reply-item:last-child {
@@ -545,6 +596,7 @@ body {
   overflow-y: auto;
   margin: 15px;
   box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  transition: background-color 0.3s ease;
 }
 
 .modal-header {
@@ -596,6 +648,7 @@ body {
   font-size: 0.9em;
   transition: border-color 0.2s;
   background: var(--card-color);
+  color: var(--text-primary);
 }
 
 .form-input:focus, .form-select:focus, .form-textarea:focus {
@@ -627,6 +680,7 @@ body {
   border-left: 3px solid var(--accent-color);
   font-size: 0.9em;
   line-height: 1.4;
+  transition: background-color 0.3s ease;
 }
 
 /* Адаптивность */
@@ -711,9 +765,9 @@ body {
   }
   
   .month-day-time {
-    font-size: 0.55em; /* Уменьшен размер шрифта для времени */
+    font-size: 0.55em;
     display: block !important;
-    padding: 1px 2px; /* Уменьшены отступы */
+    padding: 0;
   }
   
   .btn {
@@ -772,7 +826,7 @@ body {
   }
   
   .nav {
-    flex-direction: row; /* Изменено на row для лучшего позиционирования */
+    flex-direction: row;
     align-items: center;
     gap: 8px;
     padding: 8px;
@@ -806,8 +860,8 @@ body {
   }
   
   .month-day-time {
-    font-size: 0.5em; /* Еще меньше для очень маленьких экранов */
-    padding: 0 1px;
+    transform: scale(0.9);
+    transform-origin: center;
   }
   
   .modal-content {
@@ -851,7 +905,7 @@ body {
   }
   
   .month-day-time {
-    font-size: 0.45em; /* Минимальный размер */
+    font-size: 0.45em;
   }
   
   .btn {
