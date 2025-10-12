@@ -301,6 +301,7 @@ async function handleLogin(e) {
         document.getElementById('current-user').textContent = currentUser;
         
         await loadData();
+        updateStats();
         
         console.log('✅ Пользователь авторизован:', currentUser);
     } else {
@@ -802,27 +803,61 @@ function updateStats() {
     const lastDay = new Date(year, month + 1, 0).getDate();
     
     let workDays = 0;
+    let workHours = 0;
     const today = new Date();
     let nextWorkDay = null;
     
-    for (let day = 1; day <= lastDay; day++) {
-        const currentDay = new Date(year, month, day);
-        const dayKey = formatDate(currentDay);
-        
-        if (scheduleData[dayKey]?.isWorkDay) {
-            workDays++;
+    // Разная логика для Тани и Димы
+    if (userRole === 'tanya') {
+        // Для Тани: считаем рабочие дни и умножаем на 12 часов
+        for (let day = 1; day <= lastDay; day++) {
+            const currentDay = new Date(year, month, day);
+            const dayKey = formatDate(currentDay);
             
-            if (!nextWorkDay && currentDay >= today) {
-                nextWorkDay = currentDay;
+            if (scheduleData[dayKey]?.isWorkDay) {
+                workDays++;
+                
+                if (!nextWorkDay && currentDay >= today) {
+                    nextWorkDay = currentDay;
+                }
             }
         }
+        workHours = workDays * 12;
+        
+    } else if (userRole === 'dima') {
+        // Для Димы: считаем дни с указанным временем работы и умножаем на 8 часов
+        for (let day = 1; day <= lastDay; day++) {
+            const currentDay = new Date(year, month, day);
+            const dayKey = formatDate(currentDay);
+            
+            const hasWorkTime = scheduleData[dayKey]?.timeStart && scheduleData[dayKey]?.timeStart !== '';
+            if (hasWorkTime) {
+                workDays++;
+                
+                if (!nextWorkDay && currentDay >= today) {
+                    nextWorkDay = currentDay;
+                }
+            }
+        }
+        workHours = workDays * 8;
     }
     
+    // Обновляем статистику
     const totalWorkDays = document.getElementById('total-work-days');
+    const totalWorkHours = document.getElementById('total-work-hours');
+    const workHoursLabel = document.getElementById('work-hours-label');
     const nextWorkday = document.getElementById('next-workday');
     
     if (totalWorkDays) {
         totalWorkDays.textContent = workDays;
+    }
+    
+    if (totalWorkHours) {
+        totalWorkHours.textContent = workHours;
+    }
+    
+    if (workHoursLabel) {
+        workHoursLabel.textContent = userRole === 'tanya' ? 'Часов (12ч/день)' : 'Часов (8ч/день)';
     }
     
     if (nextWorkday) {
@@ -851,5 +886,3 @@ window.addEventListener('click', function(event) {
         }
     });
 });
-
-
