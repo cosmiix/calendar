@@ -25,7 +25,7 @@ try {
 }
 
 // Глобальные переменные
-let currentMonth = new Date(); // Исправлено: сразу текущая дата
+let currentMonth = new Date();
 let isEditMode = false;
 let userRole = null;
 let currentUser = null;
@@ -33,6 +33,7 @@ let selectedDay = null;
 let selectedNote = null;
 let scheduleData = {};
 let notesData = {};
+let currentTheme = 'light';
 
 // Переменные для свайпов
 let touchStartX = 0;
@@ -56,42 +57,42 @@ const endTimeOptions = {
 
 // Инициализация приложения
 document.addEventListener('DOMContentLoaded', function() {
+    initTheme();
     checkSavedAuth();
     setupEventListeners();
-    setupSwipeHandlers(); // Добавляем обработчики свайпов
+    setupSwipeHandlers();
 });
 
-// Настройка обработчиков свайпов
-function setupSwipeHandlers() {
-    const calendarSection = document.querySelector('.calendar-section');
-    
-    if (calendarSection) {
-        calendarSection.addEventListener('touchstart', function(e) {
-            touchStartX = e.changedTouches[0].screenX;
-        }, false);
-
-        calendarSection.addEventListener('touchend', function(e) {
-            touchEndX = e.changedTouches[0].screenX;
-            handleSwipe();
-        }, false);
+// Инициализация темы
+function initTheme() {
+    const savedTheme = localStorage.getItem('calendarTheme');
+    if (savedTheme) {
+        currentTheme = savedTheme;
+        applyTheme(savedTheme);
+    } else {
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            currentTheme = 'dark';
+            applyTheme('dark');
+        }
     }
 }
 
-// Обработка свайпов
-function handleSwipe() {
-    const swipeThreshold = 50; // Минимальная дистанция свайпа
+// Применение темы
+function applyTheme(theme) {
+    currentTheme = theme;
+    document.body.setAttribute('data-theme', theme);
+    localStorage.setItem('calendarTheme', theme);
     
-    if (touchEndX < touchStartX - swipeThreshold) {
-        // Свайп влево - следующий месяц
-        currentMonth.setMonth(currentMonth.getMonth() + 1);
-        renderCalendar();
-        updateStats();
-    } else if (touchEndX > touchStartX + swipeThreshold) {
-        // Свайп вправо - предыдущий месяц
-        currentMonth.setMonth(currentMonth.getMonth() - 1);
-        renderCalendar();
-        updateStats();
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
     }
+}
+
+// Переключение темы
+function toggleTheme() {
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    applyTheme(newTheme);
 }
 
 // Проверка сохраненной авторизации
@@ -103,19 +104,14 @@ function checkSavedAuth() {
         userRole = savedRole;
         currentUser = savedUser;
         
-        // Скрываем модальное окно входа и показываем основной интерфейс
         document.getElementById('login-modal').style.display = 'none';
         document.querySelector('.container').style.display = 'block';
-        
-        // Обновляем информацию о пользователе
         document.getElementById('current-user').textContent = currentUser;
         
-        // Загружаем данные
         loadData();
         
         console.log('✅ Пользователь авторизован из localStorage:', currentUser);
     } else {
-        // Показываем окно входа
         document.getElementById('login-modal').style.display = 'flex';
     }
 }
@@ -131,20 +127,15 @@ function saveAuth() {
 // Выход из системы
 function logout() {
     if (confirm('Вы уверены, что хотите выйти?')) {
-        // Очищаем сохраненные данные
         localStorage.removeItem('calendarUser');
         localStorage.removeItem('calendarUserRole');
         
-        // Сбрасываем переменные
         userRole = null;
         currentUser = null;
         isEditMode = false;
         
-        // Показываем окно входа и скрываем основной интерфейс
         document.getElementById('login-modal').style.display = 'flex';
         document.querySelector('.container').style.display = 'none';
-        
-        // Сбрасываем форму входа
         document.getElementById('login-password-input').value = '';
         
         console.log('✅ Пользователь вышел из системы');
@@ -171,7 +162,7 @@ async function loadData() {
         notesData = {};
         notesSnapshot.forEach(doc => {
             const noteData = doc.data();
-            const dateKey = noteData.date; // Используем поле date из заметки
+            const dateKey = noteData.date;
             
             if (!notesData[dateKey]) {
                 notesData[dateKey] = [];
@@ -185,7 +176,6 @@ async function loadData() {
 
         console.log('✅ Данные загружены из Firebase');
         
-        // Рендерим календарь и статистику после загрузки данных
         renderCalendar();
         updateStats();
     } catch (error) {
@@ -229,6 +219,9 @@ function setupEventListeners() {
         }
     });
 
+    // Кнопка переключения темы
+    document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+
     // Форма добавления заметки
     document.getElementById('add-note-form').addEventListener('submit', handleAddNote);
 
@@ -253,6 +246,37 @@ function setupEventListeners() {
     });
 }
 
+// Настройка обработчиков свайпов
+function setupSwipeHandlers() {
+    const calendarSection = document.querySelector('.calendar-section');
+    
+    if (calendarSection) {
+        calendarSection.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        }, false);
+
+        calendarSection.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, false);
+    }
+}
+
+// Обработка свайпов
+function handleSwipe() {
+    const swipeThreshold = 50;
+    
+    if (touchEndX < touchStartX - swipeThreshold) {
+        currentMonth.setMonth(currentMonth.getMonth() + 1);
+        renderCalendar();
+        updateStats();
+    } else if (touchEndX > touchStartX + swipeThreshold) {
+        currentMonth.setMonth(currentMonth.getMonth() - 1);
+        renderCalendar();
+        updateStats();
+    }
+}
+
 // Обработка входа в систему
 async function handleLogin(e) {
     e.preventDefault();
@@ -270,17 +294,12 @@ async function handleLogin(e) {
         userRole = userType;
         currentUser = userType === 'tanya' ? 'Таня' : 'Дима';
         
-        // Сохраняем авторизацию
         saveAuth();
         
-        // Скрываем модальное окно входа и показываем основной интерфейс
         document.getElementById('login-modal').style.display = 'none';
         document.querySelector('.container').style.display = 'block';
-        
-        // Обновляем информацию о пользователе
         document.getElementById('current-user').textContent = currentUser;
         
-        // Загружаем данные
         await loadData();
         
         console.log('✅ Пользователь авторизован:', currentUser);
@@ -299,7 +318,6 @@ function renderCalendar() {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
     
-    // Обновляем заголовок - исправлено: всегда текущий месяц и год
     const monthRange = document.getElementById('month-range');
     if (monthRange) {
         monthRange.textContent = `${monthNames[month]} ${year}`;
@@ -368,11 +386,17 @@ function createDayElement(date, isOtherMonth) {
 
     // Время работы (если есть)
     if (hasWorkTime) {
-        const timeElement = document.createElement('div');
-        timeElement.className = 'month-day-time';
-        timeElement.textContent = `${workTimeStart}-${workTimeEnd}`;
-        dayElement.appendChild(timeElement);
-    }
+  const timeElement = document.createElement('div');
+  timeElement.className = 'month-day-time';
+  
+  // Форматируем время: убираем нули, заменяем тире на перенос строки
+  const formatTime = (timeStr) => timeStr.replace(/^0/, '');
+  const startFormatted = formatTime(workTimeStart);
+  const endFormatted = formatTime(workTimeEnd);
+  
+  timeElement.textContent = `${startFormatted}\n${endFormatted}`; // ← НОВЫЙ ФОРМАТ
+  dayElement.appendChild(timeElement);
+}
 
     // Обработчики кликов
     if (!isOtherMonth) {
@@ -405,7 +429,6 @@ function showDayNotes(date, dayKey) {
     
     if (!selectedDayInfo || !dayNotesList) return;
     
-    // Обновляем информацию о выбранном дне
     const dateStr = date.toLocaleDateString('ru-RU', { 
         weekday: 'long', 
         year: 'numeric', 
@@ -414,7 +437,6 @@ function showDayNotes(date, dayKey) {
     });
     selectedDayInfo.textContent = dateStr;
     
-    // Получаем заметки для этого дня
     const dayNotes = notesData[dayKey] || [];
     
     if (dayNotes.length > 0) {
@@ -477,10 +499,8 @@ async function deleteNote(noteId) {
     try {
         await db.collection('notes').doc(noteId).delete();
         
-        // Перезагружаем данные из Firebase
         await loadData();
         
-        // Обновляем отображение
         if (selectedDay) {
             showDayNotes(selectedDay.date, selectedDay.dayKey);
         }
@@ -534,11 +554,9 @@ async function handleReplyNote(e) {
             timestamp: new Date().toISOString()
         };
         
-        // Получаем текущую заметку
         const noteDoc = await db.collection('notes').doc(selectedNote.noteId).get();
         const noteData = noteDoc.data();
         
-        // Создаем или обновляем массив ответов
         const replies = noteData.replies || [];
         replies.push(replyData);
         
@@ -546,10 +564,8 @@ async function handleReplyNote(e) {
             replies: replies
         });
         
-        // Перезагружаем данные из Firebase
         await loadData();
         
-        // Обновляем отображение
         if (selectedDay) {
             showDayNotes(selectedDay.date, selectedDay.dayKey);
         }
@@ -581,7 +597,6 @@ async function toggleWorkDay() {
     const wasWorkDay = scheduleData[selectedDay.dayKey]?.isWorkDay || false;
     const newWorkDayState = !wasWorkDay;
     
-    // Сохраняем существующее время при переключении
     const existingTimeStart = scheduleData[selectedDay.dayKey]?.timeStart || '';
     const existingTimeEnd = scheduleData[selectedDay.dayKey]?.timeEnd || '';
     
@@ -594,7 +609,6 @@ async function toggleWorkDay() {
             updatedAt: new Date().toISOString()
         }, { merge: true });
         
-        // Обновляем локальные данные
         scheduleData[selectedDay.dayKey] = {
             isWorkDay: newWorkDayState,
             timeStart: existingTimeStart,
@@ -622,26 +636,22 @@ function showTimeModal() {
     const dateStr = selectedDay.date.toLocaleDateString('ru-RU');
     title.textContent = `Время работы на ${dateStr}`;
     
-    // Устанавливаем текущее время если есть
     if (scheduleData[selectedDay.dayKey]?.timeStart) {
         timeStartSelect.value = scheduleData[selectedDay.dayKey].timeStart;
     } else {
         timeStartSelect.value = '';
     }
     
-    // Заполняем варианты окончания работы в зависимости от дня недели
     const dayOfWeek = selectedDay.date.getDay();
     const endTimes = endTimeOptions[dayOfWeek] || endTimeOptions[1];
     
     timeEndSelect.innerHTML = '';
     
-    // Добавляем пустую опцию
     const emptyOption = document.createElement('option');
     emptyOption.value = '';
     emptyOption.textContent = '-- Не выбрано --';
     timeEndSelect.appendChild(emptyOption);
     
-    // Добавляем варианты времени
     endTimes.forEach(time => {
         const option = document.createElement('option');
         option.value = time;
@@ -649,7 +659,6 @@ function showTimeModal() {
         timeEndSelect.appendChild(option);
     });
     
-    // Устанавливаем текущее время окончания если есть
     if (scheduleData[selectedDay.dayKey]?.timeEnd) {
         timeEndSelect.value = scheduleData[selectedDay.dayKey].timeEnd;
     } else {
@@ -699,20 +708,17 @@ async function handleAddNote(e) {
             text: noteText,
             author: currentUser,
             timestamp: new Date().toISOString(),
-            date: selectedDay.dayKey // Сохраняем выбранную дату
+            date: selectedDay.dayKey
         };
         
         await db.collection('notes').add(noteData);
         
-        // Перезагружаем данные из Firebase
         await loadData();
         
         closeAddNoteModal();
         
-        // Обновляем отображение заметок в боковой панели
         showDayNotes(selectedDay.date, selectedDay.dayKey);
         
-        // Обновляем индикатор заметок в календаре
         renderCalendar();
         
         console.log('✅ Заметка сохранена в Firebase');
@@ -729,7 +735,6 @@ async function saveWorkTime() {
     const workTimeEnd = document.getElementById('work-time-end').value;
     
     try {
-        // Если выбраны пустые значения - удаляем время
         if (!workTimeStart || !workTimeEnd) {
             const updateData = {
                 timeStart: '',
@@ -738,20 +743,17 @@ async function saveWorkTime() {
                 updatedAt: new Date().toISOString()
             };
             
-            // Сохраняем текущий статус рабочего дня
             if (scheduleData[selectedDay.dayKey]?.isWorkDay) {
                 updateData.isWorkDay = true;
             }
             
             await db.collection('schedule').doc(selectedDay.dayKey).set(updateData, { merge: true });
             
-            // Обновляем локальные данные
             scheduleData[selectedDay.dayKey] = {
                 ...scheduleData[selectedDay.dayKey],
                 ...updateData
             };
         } else {
-            // Сохраняем выбранное время
             const updateData = {
                 timeStart: workTimeStart,
                 timeEnd: workTimeEnd,
@@ -759,14 +761,12 @@ async function saveWorkTime() {
                 updatedAt: new Date().toISOString()
             };
             
-            // Сохраняем текущий статус рабочего дня
             if (scheduleData[selectedDay.dayKey]?.isWorkDay) {
                 updateData.isWorkDay = true;
             }
             
             await db.collection('schedule').doc(selectedDay.dayKey).set(updateData, { merge: true });
             
-            // Обновляем локальные данные
             scheduleData[selectedDay.dayKey] = {
                 ...scheduleData[selectedDay.dayKey],
                 ...updateData
@@ -811,7 +811,6 @@ function updateStats() {
     const today = new Date();
     let nextWorkDay = null;
     
-    // Считаем рабочие дни и находим ближайший
     for (let day = 1; day <= lastDay; day++) {
         const currentDay = new Date(year, month, day);
         const dayKey = formatDate(currentDay);
@@ -819,14 +818,12 @@ function updateStats() {
         if (scheduleData[dayKey]?.isWorkDay) {
             workDays++;
             
-            // Ищем ближайший рабочий день
             if (!nextWorkDay && currentDay >= today) {
                 nextWorkDay = currentDay;
             }
         }
     }
     
-    // Обновляем статистику
     const totalWorkDays = document.getElementById('total-work-days');
     const nextWorkday = document.getElementById('next-workday');
     
@@ -855,10 +852,8 @@ function formatDate(date) {
 window.addEventListener('click', function(event) {
     const modals = document.querySelectorAll('.modal');
     modals.forEach(modal => {
-        // Не закрываем окно авторизации при клике вне его
         if (event.target === modal && modal.id !== 'login-modal') {
             modal.style.display = 'none';
         }
     });
 });
-
