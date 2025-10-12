@@ -983,9 +983,10 @@ body {
   /* Десктопная версия */
 @media (min-width: 1025px) {
   .stats-section {
-    margin-top: 2.6em;
+    margin-top: 2.6em !important;
   }
 }
+
 
 
 
