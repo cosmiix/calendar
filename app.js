@@ -152,10 +152,8 @@ function logout() {
     }
 }
 
-// Загрузка данных из Firebase
-async function loadData() {
 // Загрузка данных из Firebase с real-time listeners
-function loadData() {
+async function loadData() {
     if (!db) {
         console.warn('Firebase не инициализирован');
         return;
@@ -913,4 +911,5 @@ window.addEventListener('click', function(event) {
         }
     });
 });
+
 
