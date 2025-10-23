@@ -1002,3 +1002,22 @@ body {
     font-weight: bold;
     padding: 0 5px;
 }
+/* Стиль для кастомного текста в календаре */
+.month-day-custom-text {
+    font-size: 0.65em;
+    font-weight: 600;
+    color: var(--work-time-color);
+    padding: 1px 0;
+    margin-top: 1px;
+    display: none;
+    line-height: 1.1;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    text-align: center;
+  
+}
+.month-day.has-custom-text .month-day-custom-text {
+    display: block;
+}
