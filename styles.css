@@ -986,9 +986,19 @@ body {
     font-size: 0.5em;
   }
 }
+/* Поля ввода времени в ряд */
+.time-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 
+.time-inputs .form-select {
+    flex: 1;
+}
 
-
-
-
-
+.time-separator {
+    color: var(--text-secondary);
+    font-weight: bold;
+    padding: 0 5px;
+}
