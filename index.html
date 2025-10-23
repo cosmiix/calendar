@@ -142,29 +142,38 @@
     </div>
 </div>
 
-<!-- Модальное окно выбора времени -->
+<!-- Модальное окно выбора времени и текста -->
 <div id="time-modal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 class="modal-title" id="time-modal-title">Выберите время</h3>
+            <h3 class="modal-title" id="time-modal-title">Отметить день</h3>
             <button class="close-btn" onclick="closeTimeModal()">×</button>
         </div>
+        
+        <!-- Время работы -->
         <div class="form-group">
-            <label class="form-label">Начало:</label>
-            <select class="form-select" id="work-time-start">
-                <option value="">-- Не выбрано --</option>
-                <option value="07:30">07:30</option>
-                <option value="09:00">09:00</option>
-                <option value="12:00">12:00</option>
-                <option value="13:15">13:15</option>
-            </select>
+            <label class="form-label">Выбрать время:</label>
+            <div class="time-inputs">
+                <select class="form-select" id="work-time-start" aria-label="Время начала">
+                    <option value="">-- Не выбрано --</option>
+                    <option value="07:30">07:30</option>
+                    <option value="09:00">09:00</option>
+                    <option value="12:00">12:00</option>
+                    <option value="13:15">13:15</option>
+                </select>
+                <span class="time-separator">—</span>
+                <select class="form-select" id="work-time-end" aria-label="Время окончания">
+                    <option value="">-- Не выбрано --</option>
+                </select>
+            </div>
         </div>
+
+        <!-- Текстовая метка -->
         <div class="form-group">
-            <label class="form-label">Окончание:</label>
-            <select class="form-select" id="work-time-end">
-                <!-- Опции будут заполняться динамически -->
-            </select>
-        </div>
+            <label class="form-label">Текст:</label>
+            <input type="text" class="form-input" id="custom-text" maxlength="20" >
+         </div>
+
         <div class="form-actions">
             <button type="button" class="btn btn-outline" onclick="closeTimeModal()">Отмена</button>
             <button type="button" class="btn btn-primary" onclick="saveWorkTime()">Сохранить</button>
@@ -179,5 +188,3 @@
 <!-- Основной скрипт -->
 <script src="app.js"></script>
 </body></html>
-
-
