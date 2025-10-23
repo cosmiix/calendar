@@ -8,8 +8,6 @@ const firebaseConfig = {
   messagingSenderId: "2949606491",
   appId: "1:2949606491:web:2a0f37da954c0d1267237e"
 };
-
-// 🔐 ПАРОЛИ ДЛЯ РЕДАКТИРОВАНИЯ (sha256 хеш)
 const ADMIN_PASSWORD_HASH = "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"; 
 
 // Инициализация Firebase
@@ -34,6 +32,8 @@ let selectedNote = null;
 let scheduleData = {};
 let notesData = {};
 let currentTheme = 'light';
+
+// Переменные для real-time listeners
 let scheduleUnsubscribe = null;
 let notesUnsubscribe = null;
 
@@ -129,7 +129,8 @@ function saveAuth() {
 // Выход из системы
 function logout() {
     if (confirm('Вы уверены, что хотите выйти?')) {
-       if (scheduleUnsubscribe) {
+        // Отписываемся от real-time listeners
+        if (scheduleUnsubscribe) {
             scheduleUnsubscribe();
             scheduleUnsubscribe = null;
         }
@@ -137,6 +138,7 @@ function logout() {
             notesUnsubscribe();
             notesUnsubscribe = null;
         }
+        
         localStorage.removeItem('calendarUser');
         localStorage.removeItem('calendarUserRole');
         
@@ -153,7 +155,7 @@ function logout() {
 }
 
 // Загрузка данных из Firebase с real-time listeners
-async function loadData() {
+function loadData() {
     if (!db) {
         console.warn('Firebase не инициализирован');
         return;
@@ -177,6 +179,10 @@ async function loadData() {
         console.log('✅ Расписание обновлено в реальном времени');
         renderCalendar();
         updateStats();
+          // Автоматически выбираем сегодня после загрузки данных
+    if (!selectedDay) {
+        setTimeout(selectToday, 100);
+    }
     }, (error) => {
         console.error('❌ Ошибка real-time расписания:', error);
     });
@@ -208,6 +214,7 @@ async function loadData() {
         console.error('❌ Ошибка real-time заметок:', error);
     });
 }
+
 // Настройка обработчиков событий
 function setupEventListeners() {
     // Форма входа при запуске
@@ -230,9 +237,10 @@ function setupEventListeners() {
     });
 
     document.getElementById('current-month').addEventListener('click', () => {
-        currentMonth = new Date();
-        renderCalendar();
-        updateStats();
+         currentMonth = new Date();
+         renderCalendar();
+         updateStats();
+          selectToday(); // ← добавляем выбор сегодняшнего дня
     });
 
     // Кнопка редактирования
@@ -326,11 +334,36 @@ async function handleLogin(e) {
         document.getElementById('current-user').textContent = currentUser;
         
         loadData();
-        updateStats();
         
         console.log('✅ Пользователь авторизован:', currentUser);
     } else {
         alert('❌ Неверный пароль');
+    }
+}
+function selectToday() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayKey = formatDate(today);
+    
+    selectedDay = { 
+        date: today, 
+        dayKey: todayKey, 
+        isWorkDay: scheduleData[todayKey]?.isWorkDay || false 
+    };
+    
+    showDayNotes(today, todayKey);
+    
+    // Прокручиваем к сегодняшнему дню в календаре
+    scrollToToday();
+}
+function scrollToToday() {
+    const todayElement = document.querySelector('.month-day.today');
+    if (todayElement) {
+        todayElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center',
+            inline: 'center' 
+        });
     }
 }
 
@@ -377,6 +410,10 @@ function renderCalendar() {
         const nextMonthDay = new Date(year, month + 1, i);
         createDayElement(nextMonthDay, true);
     }
+      // Автоматически выбираем сегодняшний день при первой загрузке
+    if (!selectedDay) {
+        setTimeout(selectToday, 100);
+    }
 }
 
 // Создание элемента дня
@@ -390,8 +427,10 @@ function createDayElement(date, isOtherMonth) {
     const isWorkDay = scheduleData[dayKey]?.isWorkDay || false;
     const workTimeStart = scheduleData[dayKey]?.timeStart || '';
     const workTimeEnd = scheduleData[dayKey]?.timeEnd || '';
+    const customText = scheduleData[dayKey]?.customText || '';
     const hasNotes = notesData[dayKey] && notesData[dayKey].length > 0;
     const hasWorkTime = workTimeStart && workTimeStart !== '';
+    const hasCustomText = customText && customText !== '';
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -403,6 +442,7 @@ function createDayElement(date, isOtherMonth) {
     if (isWorkDay) dayElement.classList.add('work-day');
     if (hasNotes) dayElement.classList.add('has-notes');
     if (hasWorkTime) dayElement.classList.add('has-work-time');
+    if (hasCustomText) dayElement.classList.add('has-custom-text');
 
     // Номер дня
     const dayNumber = document.createElement('div');
@@ -411,12 +451,26 @@ function createDayElement(date, isOtherMonth) {
     dayElement.appendChild(dayNumber);
 
     // Время работы (если есть)
-if (hasWorkTime) {
-  const timeElement = document.createElement('div');
-  timeElement.className = 'month-day-time';
-  timeElement.textContent = `${workTimeStart}\n${workTimeEnd}`;
-  dayElement.appendChild(timeElement);
-}
+    if (hasWorkTime) {
+        const timeElement = document.createElement('div');
+        timeElement.className = 'month-day-time';
+        
+        // Форматируем время: убираем нули, заменяем тире на перенос строки
+        const formatTime = (timeStr) => timeStr.replace(/^0/, '');
+        const startFormatted = formatTime(workTimeStart);
+        const endFormatted = formatTime(workTimeEnd);
+        
+        timeElement.textContent = `${startFormatted}\n${endFormatted}`;
+        dayElement.appendChild(timeElement);
+    }
+
+    // Кастомный текст (если есть)
+    if (hasCustomText) {
+        const customTextElement = document.createElement('div');
+        customTextElement.className = 'month-day-custom-text';
+        customTextElement.textContent = customText;
+        dayElement.appendChild(customTextElement);
+    }
 
     // Обработчики кликов
     if (!isOtherMonth) {
@@ -507,7 +561,7 @@ function showDayNotes(date, dayKey) {
 
 // Функция удаления заметки
 async function deleteNote(noteId) {
-    if (!confirm('Вы уверены, что хотите удалить эту заметку?')) {
+    if (!confirm('Удалить заметку?')) {
         return;
     }
     
@@ -518,13 +572,6 @@ async function deleteNote(noteId) {
     
     try {
         await db.collection('notes').doc(noteId).delete();
-        
-        loadData();
-        
-        if (selectedDay) {
-            showDayNotes(selectedDay.date, selectedDay.dayKey);
-        }
-        renderCalendar();
         
         console.log('✅ Заметка удалена из Firebase');
     } catch (error) {
@@ -584,12 +631,6 @@ async function handleReplyNote(e) {
             replies: replies
         });
         
-        loadData();
-        
-        if (selectedDay) {
-            showDayNotes(selectedDay.date, selectedDay.dayKey);
-        }
-        
         closeReplyModal();
         console.log('✅ Ответ сохранен в Firebase');
     } catch (error) {
@@ -607,7 +648,7 @@ function closeReplyModal() {
     selectedNote = null;
 }
 
-// Новая функция для переключения рабочего дня (для Тани)
+// Функция для переключения рабочего дня (для Тани)
 async function toggleWorkDay() {
     if (!db) {
         alert('Firebase не инициализирован');
@@ -619,12 +660,14 @@ async function toggleWorkDay() {
     
     const existingTimeStart = scheduleData[selectedDay.dayKey]?.timeStart || '';
     const existingTimeEnd = scheduleData[selectedDay.dayKey]?.timeEnd || '';
+    const existingCustomText = scheduleData[selectedDay.dayKey]?.customText || '';
     
     try {
         await db.collection('schedule').doc(selectedDay.dayKey).set({
             isWorkDay: newWorkDayState,
             timeStart: existingTimeStart,
             timeEnd: existingTimeEnd,
+            customText: existingCustomText,
             date: selectedDay.dayKey,
             updatedAt: new Date().toISOString()
         }, { merge: true });
@@ -632,7 +675,8 @@ async function toggleWorkDay() {
         scheduleData[selectedDay.dayKey] = {
             isWorkDay: newWorkDayState,
             timeStart: existingTimeStart,
-            timeEnd: existingTimeEnd
+            timeEnd: existingTimeEnd,
+            customText: existingCustomText
         };
         
         renderCalendar();
@@ -644,7 +688,7 @@ async function toggleWorkDay() {
     }
 }
 
-// Модальные окна
+// Модальное окно времени/текста для Димы
 function showTimeModal() {
     const modal = document.getElementById('time-modal');
     const title = document.getElementById('time-modal-title');
@@ -654,38 +698,62 @@ function showTimeModal() {
     if (!modal || !title || !timeStartSelect || !timeEndSelect) return;
     
     const dateStr = selectedDay.date.toLocaleDateString('ru-RU');
-    title.textContent = `Время работы на ${dateStr}`;
+    title.textContent = `${dateStr}`;
     
-    if (scheduleData[selectedDay.dayKey]?.timeStart) {
-        timeStartSelect.value = scheduleData[selectedDay.dayKey].timeStart;
+    // Заполняем данные если есть
+    const dayData = scheduleData[selectedDay.dayKey];
+    if (dayData) {
+        if (dayData.timeStart) {
+            timeStartSelect.value = dayData.timeStart;
+            // Заполняем варианты окончания работы
+            updateEndTimeOptions(dayData.timeStart, selectedDay.date.getDay());
+            timeEndSelect.value = dayData.timeEnd;
+        } else {
+            timeStartSelect.value = '';
+            timeEndSelect.innerHTML = '<option value="">-- Не выбрано --</option>';
+        }
+        
+        if (dayData.customText) {
+            document.getElementById('custom-text').value = dayData.customText;
+        } else {
+            document.getElementById('custom-text').value = '';
+        }
     } else {
+        // Сбрасываем значения если данных нет
         timeStartSelect.value = '';
-    }
+        timeEndSelect.innerHTML = '<option value="">-- Не выбрано --</option>';
+        document.getElementById('custom-text').value = '';
+    } 
+    // Обработчик изменения времени начала
+    timeStartSelect.onchange = () => {
+        if (timeStartSelect.value) {
+            updateEndTimeOptions(timeStartSelect.value, selectedDay.date.getDay());
+        } else {
+            timeEndSelect.innerHTML = '<option value="">-- Не выбрано --</option>';
+        }
+    };
+    modal.style.display = 'flex';
+}
+
+// Функция обновления опций времени окончания
+function updateEndTimeOptions(startTime, dayOfWeek) {
+    const endSelect = document.getElementById('work-time-end');
+    const options = endTimeOptions[dayOfWeek] || endTimeOptions[1];
     
-    const dayOfWeek = selectedDay.date.getDay();
-    const endTimes = endTimeOptions[dayOfWeek] || endTimeOptions[1];
-    
-    timeEndSelect.innerHTML = '';
-    
+    endSelect.innerHTML = '';
     const emptyOption = document.createElement('option');
     emptyOption.value = '';
     emptyOption.textContent = '-- Не выбрано --';
-    timeEndSelect.appendChild(emptyOption);
+    endSelect.appendChild(emptyOption);
     
-    endTimes.forEach(time => {
-        const option = document.createElement('option');
-        option.value = time;
-        option.textContent = time;
-        timeEndSelect.appendChild(option);
+    options.forEach(time => {
+        if (time > startTime) {
+            const option = document.createElement('option');
+            option.value = time;
+            option.textContent = time;
+            endSelect.appendChild(option);
+        }
     });
-    
-    if (scheduleData[selectedDay.dayKey]?.timeEnd) {
-        timeEndSelect.value = scheduleData[selectedDay.dayKey].timeEnd;
-    } else {
-        timeEndSelect.value = '';
-    }
-    
-    modal.style.display = 'flex';
 }
 
 function closeTimeModal() {
@@ -733,14 +801,7 @@ async function handleAddNote(e) {
         
         await db.collection('notes').add(noteData);
         
-        loadData();
-        
         closeAddNoteModal();
-        
-        showDayNotes(selectedDay.date, selectedDay.dayKey);
-        
-        renderCalendar();
-        
         console.log('✅ Заметка сохранена в Firebase');
     } catch (error) {
         console.error('❌ Ошибка сохранения заметки:', error);
@@ -748,58 +809,63 @@ async function handleAddNote(e) {
     }
 }
 
+// Сохранение времени работы или кастомного текста
 async function saveWorkTime() {
     if (!selectedDay || !db) return;
     
     const workTimeStart = document.getElementById('work-time-start').value;
     const workTimeEnd = document.getElementById('work-time-end').value;
+    const customText = document.getElementById('custom-text').value.trim();
+    
+    // Если выбрано время начала, но не выбрано окончание - показываем ошибку
+    if (workTimeStart && !workTimeEnd) {
+        alert('❌ Выберите время окончания работы');
+        return;
+    }
+    
+    // Если выбрано время окончания, но не выбрано начало - показываем ошибку
+    if (workTimeEnd && !workTimeStart) {
+        alert('❌ Выберите время начала работы');
+        return;
+    }
     
     try {
-        if (!workTimeStart || !workTimeEnd) {
-            const updateData = {
-                timeStart: '',
-                timeEnd: '',
-                date: selectedDay.dayKey,
-                updatedAt: new Date().toISOString()
-            };
-            
-            if (scheduleData[selectedDay.dayKey]?.isWorkDay) {
-                updateData.isWorkDay = true;
-            }
-            
-            await db.collection('schedule').doc(selectedDay.dayKey).set(updateData, { merge: true });
-            
-            scheduleData[selectedDay.dayKey] = {
-                ...scheduleData[selectedDay.dayKey],
-                ...updateData
-            };
+        const updateData = {
+            date: selectedDay.dayKey,
+            updatedAt: new Date().toISOString()
+        };
+        
+        // Сохраняем время если оно выбрано
+        if (workTimeStart && workTimeEnd) {
+            updateData.timeStart = workTimeStart;
+            updateData.timeEnd = workTimeEnd;
         } else {
-            const updateData = {
-                timeStart: workTimeStart,
-                timeEnd: workTimeEnd,
-                date: selectedDay.dayKey,
-                updatedAt: new Date().toISOString()
-            };
-            
-            if (scheduleData[selectedDay.dayKey]?.isWorkDay) {
-                updateData.isWorkDay = true;
-            }
-            
-            await db.collection('schedule').doc(selectedDay.dayKey).set(updateData, { merge: true });
-            
-            scheduleData[selectedDay.dayKey] = {
-                ...scheduleData[selectedDay.dayKey],
-                ...updateData
-            };
+            // Если время не выбрано - очищаем его
+            updateData.timeStart = '';
+            updateData.timeEnd = '';
         }
+        
+        // Сохраняем текст если он есть
+        if (customText) {
+            updateData.customText = customText;
+        } else {
+            updateData.customText = '';
+        }
+        
+        // Сохраняем статус рабочего дня Тани если он есть
+        if (scheduleData[selectedDay.dayKey]?.isWorkDay) {
+            updateData.isWorkDay = true;
+        }
+        
+        await db.collection('schedule').doc(selectedDay.dayKey).set(updateData, { merge: true });
         
         closeTimeModal();
         renderCalendar();
         updateStats();
-        console.log('✅ Время работы сохранено в Firebase');
+        console.log('✅ Данные дня сохранены в Firebase');
     } catch (error) {
-        console.error('❌ Ошибка сохранения времени:', error);
-        alert('Ошибка при сохранении времени');
+        console.error('❌ Ошибка сохранения:', error);
+        alert('Ошибка при сохранении');
     }
 }
 
@@ -850,13 +916,15 @@ function updateStats() {
         workHours = workDays * 12;
         
     } else if (userRole === 'dima') {
-        // Для Димы: считаем дни с указанным временем работы и умножаем на 8 часов
+        // Для Димы: считаем дни с указанным временем работы или кастомным текстом и умножаем на 8 часов
         for (let day = 1; day <= lastDay; day++) {
             const currentDay = new Date(year, month, day);
             const dayKey = formatDate(currentDay);
             
             const hasWorkTime = scheduleData[dayKey]?.timeStart && scheduleData[dayKey]?.timeStart !== '';
-            if (hasWorkTime) {
+            const hasCustomText = scheduleData[dayKey]?.customText && scheduleData[dayKey]?.customText !== '';
+            
+            if (hasWorkTime || hasCustomText) {
                 workDays++;
                 
                 if (!nextWorkDay && currentDay >= today) {
@@ -911,8 +979,3 @@ window.addEventListener('click', function(event) {
         }
     });
 });
-
-
-
-
-
