@@ -915,25 +915,25 @@ function updateStats() {
         }
         workHours = workDays * 12;
         
-    } else if (userRole === 'dima') {
-        // Для Димы: считаем дни с указанным временем работы или кастомным текстом и умножаем на 8 часов
-        for (let day = 1; day <= lastDay; day++) {
-            const currentDay = new Date(year, month, day);
-            const dayKey = formatDate(currentDay);
+} else if (userRole === 'dima') {
+    // Для Димы: считаем ТОЛЬКО дни с указанным временем работы и умножаем на 8 часов
+    for (let day = 1; day <= lastDay; day++) {
+        const currentDay = new Date(year, month, day);
+        const dayKey = formatDate(currentDay);
+        
+        const hasWorkTime = scheduleData[dayKey]?.timeStart && scheduleData[dayKey]?.timeStart !== '';
+        
+        // УБИРАЕМ проверку на кастомный текст - считаем только дни со временем
+        if (hasWorkTime) {
+            workDays++;
             
-            const hasWorkTime = scheduleData[dayKey]?.timeStart && scheduleData[dayKey]?.timeStart !== '';
-            const hasCustomText = scheduleData[dayKey]?.customText && scheduleData[dayKey]?.customText !== '';
-            
-            if (hasWorkTime || hasCustomText) {
-                workDays++;
-                
-                if (!nextWorkDay && currentDay >= today) {
-                    nextWorkDay = currentDay;
-                }
+            if (!nextWorkDay && currentDay >= today) {
+                nextWorkDay = currentDay;
             }
         }
-        workHours = workDays * 8;
     }
+    workHours = workDays * 8;
+}
     
     // Обновляем статистику
     const totalWorkDays = document.getElementById('total-work-days');
@@ -979,3 +979,4 @@ window.addEventListener('click', function(event) {
         }
     });
 });
+
