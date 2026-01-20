@@ -325,7 +325,7 @@ async function handleLogin(e) {
     
     if ((userType === 'tanya' || userType === 'dima') && hashHex === ADMIN_PASSWORD_HASH) {
         userRole = userType;
-        currentUser = userType === 'tanya' ? 'Таня' : 'Дима';
+        currentUser = userType === 'tanya' ? 'Татьяна' : 'Дима';
         
         saveAuth();
         
@@ -979,4 +979,5 @@ window.addEventListener('click', function(event) {
         }
     });
 });
+
 
